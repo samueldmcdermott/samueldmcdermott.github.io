@@ -3,5 +3,5 @@ plugins:
 - jekyll-remote-theme # add this line to the plugins list if you already have one
 
 title: [Samuel D. McDermott]
-description: [The webpage of Samuel D. McDermott: physicist and machine learning researcher]
+description: [The webpage of Samuel D. McDermott, physicist and machine learning researcher]
 logo: self-oct-22.jpg

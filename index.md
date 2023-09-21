@@ -4,9 +4,9 @@ layout: default
 
 # Position and Background
 
-I am permanent research staff at the University of Chicago. I use machine learning and numerical techniques to solve problems in cosmological and astrophysical data analysis.
+I am permanent research staff at the University of Chicago and a member of the [Deep Skies](https://deepskieslab.com/) community of researchers. I use machine learning and numerical techniques to solve problems in cosmological and astrophysical data analysis.
 
-Previously, I worked on particle phenomenology, focusing especially on the search for dark matter. I defended my graduate thesis at the University of Michigan as the student of Kathryn M. Zurek in April of 2014. For my final year in grad school, I was a theory student fellow at Fermilab, working with Dan Hooper and the particle group.  I went on to a postdoc at the C. N. Yang Institute for Theoretical Physics at Stony Brook University on Long Island. After that, and most recently before starting my current position, I was the Schramm Fellow in the theoretical astrophysics group on the 6th floor at Fermilab. For undergrad I attended the University of Pennsylvania, where I was a member of the student radio station, [WQHS](http://www.wqhsradio.org/).
+Previously, I worked on particle phenomenology, focusing especially on the search for dark matter. I defended my graduate thesis at the University of Michigan as the student of Kathryn M. Zurek in April of 2014. For my final year in grad school, I was a theory student fellow at Fermilab, working with Dan Hooper and the particle group.  I went on to a postdoc at the C. N. Yang Institute for Theoretical Physics at Stony Brook University on Long Island from 2014-2017. After that, and until 2022, I was the Schramm Fellow in the theoretical astrophysics group on the 6th floor at Fermilab. For undergrad I attended the University of Pennsylvania, where I was a member of the student radio station, [WQHS](http://www.wqhsradio.org/).
 
 My email address is formed by appending uchicago dot (or period) edu to sammcd, or by using my github handle and appending the domain for Google email.
 
