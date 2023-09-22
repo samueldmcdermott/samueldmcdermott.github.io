@@ -2,5 +2,4 @@ title: [Samuel D. McDermott]
 description: [Research in physics and machine learning]
 logo: self-oct-22.jpg
 
-remote_theme: pages-themes/minimal@v0.2.0
-plugins: jekyll-remote-theme
+theme: jekyll-theme-minimal
