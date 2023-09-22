@@ -43,8 +43,7 @@ The arXiv category for the following papers is hep-ph unless noted.
 <p>13. <b><i> Everything You Always Wanted to Know About Dark Matter Elastic Scattering Through Higgs Loops But Were Afraid to Ask.</i> <a href="http://arxiv.org/abs/1508.05390">arXiv:1508.05390</a></b>, with Asher Berlin and Dan Hooper. Published in PRD.</p>
 <p>12. <b><i>Inflatable Dark Matter</i> <a href="http://arxiv.org/abs/1507.08660">arXiv:1507.08660</a></b>,with Hooman Davoudiasl and Dan Hooper. Published in PRL. Selected as an <b><i>Editor's Choice</i></b>.</p>
 <p>11. <b><i>Identifying the Theory of Dark Matter with Direct Detection</i> <a href="http://arxiv.org/abs/1506.04454">arXiv:1506.04454</a>,</b> with Vera Gluscevic, Moira Gresham, Annika H. G. Peter, and Kathryn M. Zurek. Published in JCAP. Associated code available <a href="http://ascl.net/1506.002">here</a>.</b>
-<p>10. <b><i>Lining up the Galactic Center Gamma-Ray Excess</i> <a href="http://arxiv.org/abs/1406.6408">arXiv:1406.6408</a></a></b>.
-Published in Physics of the Dark Universe.</p>
+<p>10. <b><i>Lining up the Galactic Center Gamma-Ray Excess</i> <a href="http://arxiv.org/abs/1406.6408">arXiv:1406.6408</a></a></b>. Published in Physics of the Dark Universe.</p>
 <p>9. <b><i>Hidden Sector Dark Matter Models for the Galactic Center Gamma-Ray Excess</i> <a href="http://arxiv.org/abs/1405.5204">arXiv:1405.5204</a></b>, with Asher Berlin, Pierre Gratia and Dan Hooper. Published in PRD.</p>
 <p>8. <b><i>Simplified Dark Matter Models for the Galactic Center Gamma-Ray Excess</i> <a href="http://arxiv.org/abs/1404.0022">arXiv:1404.0022</a></b>, with Asher Berlin and Dan Hooper. Published in PRD.</p>
 <p>7. <b><i>Dissecting the Gamma-Ray Background in Search of Dark Matter</i> <a href="http://arxiv.org/abs/1312.0608">arXiv:1312.0608 [astro-ph]</a></b>, with Ilias Cholis and Dan Hooper. Published in JCAP.</p>
@@ -54,4 +53,4 @@ Published in Physics of the Dark Universe.</p>
 <p>3. <b><i>The Dark Matter Inverse Problem: Extracting Particle Physics from Scattering Events</i> <a href="http://arxiv.org/abs/1110.4281">arXiv:1110.4281</a></b>, with Hai-Bo Yu and Kathryn M. Zurek. Published in PRD.</p>
 <p>2. <b><i>Constraints on Scalar Asymmetric Dark Matter from Black Hole Formation in Neutron Stars</i> <a href="http://arxiv.org/abs/1103.5472">arXiv:1103.5472</a></b>, with Hai-Bo Yu and Kathryn M. Zurek. Published in PRD.</p>
 <p>1. <b><i>Turning off the Lights: How Dark is Dark Matter?</i> <a href="http://arxiv.org/abs/1011.2907">arXiv:1011.2907</a></b>, with Hai-Bo Yu and Kathryn M. Zurek. Published in PRD.</p>
-</ol>
+</ol reversed>
