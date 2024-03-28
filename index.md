@@ -4,9 +4,9 @@ layout: default
 
 # Position and Background
 
-I am permanent research staff at the University of Chicago and a member of the [Deep Skies](https://deepskieslab.com/) community of researchers. I use machine learning and numerical techniques to solve problems in cosmological and astrophysical data analysis.
+I am permanent research staff in the Department of Astronomy and Astrophysics at the University of Chicago and a member of the [Deep Skies](https://deepskieslab.com/) community of researchers. I use machine learning and numerical techniques to solve problems in cosmological and astrophysical data analysis.
 
-Previously, I worked on particle phenomenology, focusing especially on the search for dark matter. I defended my PhD thesis at the University of Michigan as the student of Kathryn M. Zurek in April of 2014. For my final year in grad school, I was a theory student fellow at Fermilab, working with Dan Hooper and the particle group.  I went on to a postdoc at the C. N. Yang Institute for Theoretical Physics at Stony Brook University on Long Island from 2014-2017. After that, and until 2022, I was the Schramm Fellow in the theoretical astrophysics group on the 6th floor at Fermilab. For undergrad I attended the University of Pennsylvania, where I was a member of the student radio station, [WQHS](https://wqhs.upenn.edu/).
+Previously, I worked on particle physics phenomenology, focusing especially on the search for dark matter. I defended my PhD thesis at the University of Michigan as the student of Kathryn M. Zurek in April of 2014. For my final year in grad school, I was a theory student fellow at Fermilab, working with Dan Hooper and the particle group.  I went on to a postdoc at the C. N. Yang Institute for Theoretical Physics at Stony Brook University on Long Island from 2014-2017. After that, and until 2022, I was the Schramm Fellow in the theoretical astrophysics group on the 6th floor at Fermilab. For undergrad I attended the University of Pennsylvania, where I was a member of the student radio station, [WQHS](https://wqhs.upenn.edu/).
 
 My email address is formed by appending uchicago dot (or period) edu to sammcd, or by using my github handle and appending the domain for Google email.
 
@@ -17,6 +17,8 @@ PDF versions of my CV and resume are available upon request.
 I'll put random pedagogical notes here.
 
 [Here's one](linear-fit-24.pdf) about fitting a linear model with Gaussian priors. This effectively reproduces the [Wikipedia page](https://en.wikipedia.org/wiki/Ridge_regression#Tikhonov_regularization) on ridge regression with a different perspective, and adds a derivation of error bars on the regressed parameters.
+
+[Here's one](wav-filter-23.pdf) about generating the filters for Daubechies wavelets. These are given numerically by [PyWavelets](https://pywavelets.readthedocs.io/en/latest/) (and surely other places as well) but here I aimed solely to write a minimum-length reference for how they're generated and why (annihilate polynomials of degree N/2-1!)
 
 # Current Research
 
