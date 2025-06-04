@@ -16,8 +16,6 @@ PDF versions of my CV and resume are available upon request.
 
 I'll put random pedagogical notes here.
 
-[Here's one](linear-fit-24.pdf) about fitting a linear model with Gaussian priors. This effectively reproduces the [Wikipedia page](https://en.wikipedia.org/wiki/Ridge_regression#Tikhonov_regularization) on ridge regression with a different perspective, and adds a derivation of error bars on the regressed parameters.
-
 [Here's one](wav-filter-23.pdf) about generating the filters for Daubechies wavelets. These are given numerically by [PyWavelets](https://pywavelets.readthedocs.io/en/latest/) (and surely other places as well) but here I aimed solely to write a minimum-length reference for how they're generated and why (annihilate polynomials of degree N/2-1!)
 
 # Current Research
