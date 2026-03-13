@@ -20,10 +20,6 @@ I'll put random pedagogical notes here.
 
 [Here's one](wav-filter-23.pdf) about generating the filters for Daubechies wavelets. These are given numerically by [PyWavelets](https://pywavelets.readthedocs.io/en/latest/) (and surely other places as well) but here I aimed solely to write a minimum-length reference for how they're generated and why (annihilate polynomials of degree N/2-1!)
 
-# Current Research
-
-I'm interested in machine learning and artificial intelligence, and how these novel techniques interact with other numerical methods like high-dimensional parameter inference or the wavelet decomposition. I am currently working on applying SBI methods to problems in CMB astrophysics, including the extraction of `r` and the characterization of SZ clusters.
-
 # Past Research
 
 For over a decade, I studied particle physics with a number of excellent collaborators. I currently consider myself to be either _retired_ or _on sabbatical_ from particle physics, depending on the day.
