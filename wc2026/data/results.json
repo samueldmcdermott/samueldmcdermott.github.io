@@ -1,0 +1,40 @@
+{
+  "_comment": "OFFICIAL RESULTS — edit by hand as games finish. For each match, set the value to the side that WON: \"a\" = top team in that match, \"b\" = bottom team (the same a/b sides shown on the bracket page). Leave null until the match is played. Match ids are grouped by round below. The third-place match (103) is intentionally absent — it is not scored. On commit, the leaderboard workflow re-scores everyone and updates wc2026/leaderboard.json with a fresh timestamp.",
+  "winners": {
+    "74": null,
+    "77": null,
+    "73": null,
+    "75": null,
+    "83": null,
+    "84": null,
+    "81": null,
+    "82": null,
+    "76": null,
+    "78": null,
+    "79": null,
+    "80": null,
+    "86": null,
+    "88": null,
+    "85": null,
+    "87": null,
+
+    "89": null,
+    "90": null,
+    "93": null,
+    "94": null,
+    "91": null,
+    "92": null,
+    "95": null,
+    "96": null,
+
+    "97": null,
+    "98": null,
+    "99": null,
+    "100": null,
+
+    "101": null,
+    "102": null,
+
+    "104": null
+  }
+}

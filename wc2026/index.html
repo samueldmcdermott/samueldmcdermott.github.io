@@ -30,36 +30,107 @@
   </p>
 </header>
 
-<div class="scorebar">
-  <div class="score-pill">
-    <span class="num" id="totalScore">0</span>
-    <span class="lbl">Max points<br>picked</span>
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button class="tab active" data-view="bracket" role="tab" aria-selected="true">Your bracket</button>
+  <button class="tab" data-view="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
+</nav>
+
+<div class="view view-bracket" id="viewBracket">
+  <div class="scorebar">
+    <div class="score-pill">
+      <span class="num" id="totalScore">0</span>
+      <span class="lbl">Max points<br>picked</span>
+    </div>
+    <div class="rounds-mini" id="roundsMini"></div>
+    <div class="bar-actions">
+      <label class="name-field">
+        <span class="name-lbl">Your name</span>
+        <input type="text" id="userName" maxlength="40" autocomplete="name"
+               spellcheck="false">
+      </label>
+      <button class="act" id="submitBtn">Submit bracket</button>
+      <button class="act ghost" id="copyBtn">Copy share link</button>
+      <button class="act ghost" id="resetBtn">Reset</button>
+    </div>
   </div>
-  <div class="rounds-mini" id="roundsMini"></div>
-  <div class="bar-actions">
-    <button class="act" id="copyBtn">Copy share link</button>
-    <button class="act ghost" id="resetBtn">Reset</button>
+
+  <div class="scroll">
+    <div class="bracket" id="bracket"></div>
   </div>
 </div>
 
-<div class="scroll">
-  <div class="bracket" id="bracket"></div>
-</div>
+<section class="view view-leaderboard leaderboard" id="leaderboard">
+  <div class="lb-head">
+    <h2>Leaderboard</h2>
+    <span class="lb-updated" id="lbUpdated"></span>
+  </div>
+  <p class="lb-note">
+    Scored against the official results as they come in. Fill out your bracket on
+    the <b>Your bracket</b> tab, add your name, and hit <b>Submit bracket</b> to enter.
+  </p>
+  <ol class="lb-list" id="lbList"></ol>
+</section>
 
 <footer>
   <b>How scoring works.</b> Each correct pick is worth more the deeper the round — the classic doubling scheme rewards calling the late rounds right.
   A perfect bracket totals <b>80 points</b> (16·1 + 8·2 + 4·4 + 2·8 + 1·16 — every round is worth 16). The counter above shows the total points your current picks are <i>worth</i> if they all come true.
   <div class="legend">
     <span><span class="dot" style="background:var(--win)"></span> Advanced</span>
-    <span><span class="dot" style="background:var(--gold)"></span> Champion / winner marker</span>
+    <span><span class="dot" style="background:var(--amber)"></span> Champion / winner marker</span>
     <span><span class="dot" style="background:var(--card)"></span> Undecided</span>
+    <span><span class="dot" style="background:#e26d6d"></span> ✕ Pick was wrong</span>
+    <span><span class="dot" style="background:#7a83bc"></span> ✕ Eliminated upstream</span>
   </div>
   <p class="credit">Bracket structure per FIFA's published Round-of-32 paths. Matchups reflect group-stage projections as of June 2026 and update as results are confirmed. Built as a static site — no tracking, no backend.</p>
 </footer>
 
 <div class="toast" id="toast">Link copied</div>
 
+<!-- Bracket chooser: shown when the entered name already has submitted brackets -->
+<dialog class="dlg" id="bracketPicker">
+  <form method="dialog" class="dlg-card">
+    <div class="dlg-head">
+      <h3 id="pickerTitle">Your brackets</h3>
+      <button class="dlg-x" value="cancel" aria-label="Close">✕</button>
+    </div>
+    <p class="dlg-note">
+      Pick a bracket to load and edit, or start a new one. Brackets you've just
+      submitted can take a minute to appear here.
+    </p>
+    <ul class="dlg-list" id="pickerList"></ul>
+    <div class="dlg-actions">
+      <button class="act" id="newBracketBtn" value="new" type="button">+ Create a new bracket</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Pre-submit dialog: label + official choice -->
+<dialog class="dlg" id="submitDialog">
+  <form method="dialog" class="dlg-card">
+    <div class="dlg-head">
+      <h3>Submit bracket</h3>
+      <button class="dlg-x" value="cancel" aria-label="Close">✕</button>
+    </div>
+    <label class="dlg-field">
+      <span>Label <em>(optional)</em></span>
+      <input type="text" id="submitLabel" maxlength="40" spellcheck="false"
+             placeholder="e.g. Bold picks">
+      <small>Helps you tell several of your brackets apart. Left blank, it's
+        named with the submission time.</small>
+    </label>
+    <label class="dlg-check">
+      <input type="checkbox" id="submitOfficial" checked>
+      <span>Make this my <b>official</b> entry <small>— only your official bracket is scored. Your first one is official automatically.</small></span>
+    </label>
+    <div class="dlg-actions">
+      <button class="act ghost" value="cancel" type="button" id="submitCancelBtn">Cancel</button>
+      <button class="act" value="ok" type="button" id="submitConfirmBtn">Submit</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- data.js (classic) publishes window.WC; the app is ES modules from main.js -->
 <script src="src/data.js"></script>
-<script src="src/bracket.js"></script>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

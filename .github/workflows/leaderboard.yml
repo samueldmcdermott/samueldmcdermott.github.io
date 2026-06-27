@@ -1,0 +1,53 @@
+name: Bracket leaderboard
+
+# Recomputes wc2026/leaderboard.json whenever the official results or the
+# submissions change on the default branch, or when run manually.
+#
+# Submissions arrive with no GitHub login: the page posts each bracket to a
+# Google Form, and a bound Apps Script commits wc2026/data/submissions.json
+# (see google-apps-script/Code.gs + SETUP.md). That commit triggers this
+# workflow via the push path below.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "wc2026/data/results.json"
+      - "wc2026/data/submissions.json"
+      - "wc2026/src/data.js"
+      - "scripts/score_bracket.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialize runs so back-to-back commits don't race on the push.
+concurrency:
+  group: leaderboard
+  cancel-in-progress: false
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Score leaderboard
+        run: python scripts/score_bracket.py
+
+      - name: Commit updated leaderboard
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add wc2026/leaderboard.json
+          if git diff --cached --quiet; then
+            echo "No leaderboard changes to commit."
+          else
+            git commit -m "chore: update leaderboard [skip ci]"
+            git push origin HEAD:${{ github.event.repository.default_branch }}
+          fi

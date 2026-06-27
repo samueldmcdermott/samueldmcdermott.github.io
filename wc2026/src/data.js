@@ -10,14 +10,17 @@
    Add a flag emoji to FLAGS if the team isn't listed yet.
    ============================================================ */
 
-const FLAGS = {
-  "South Africa":"🇿🇦","Canada":"🇨🇦","Brazil":"🇧🇷","Japan":"🇯🇵","Germany":"🇩🇪",
-  "Paraguay":"🇵🇾","Netherlands":"🇳🇱","Morocco":"🇲🇦","Ivory Coast":"🇨🇮","Norway":"🇳🇴",
-  "France":"🇫🇷","Sweden":"🇸🇪","Mexico":"🇲🇽","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Cabo Verde":"🇨🇻","Egypt":"🇪🇬","Czechia":"🇨🇿","United States":"🇺🇸","Bosnia and Herzegovina":"🇧🇦",
-  "Spain":"🇪🇸","Austria":"🇦🇹","Switzerland":"🇨🇭","Belgium":"🇧🇪","Portugal":"🇵🇹",
-  "Ghana":"🇬🇭","Australia":"🇦🇺","Iran":"🇮🇷","Argentina":"🇦🇷","Uruguay":"🇺🇾",
-  "Colombia":"🇨🇴","Croatia":"🇭🇷"
+/* Three-letter FIFA-style country codes, rendered as text badges.
+   (Emoji flags were dropped — they fail to render on Windows and for the
+   subdivision flags of England/Scotland, so plain codes are used instead.) */
+const CODES = {
+  "South Africa":"RSA","Canada":"CAN","Brazil":"BRA","Japan":"JPN","Germany":"GER",
+  "Paraguay":"PAR","Netherlands":"NED","Morocco":"MAR","Ivory Coast":"CIV","Norway":"NOR",
+  "France":"FRA","Sweden":"SWE","Mexico":"MEX","Scotland":"SCO","England":"ENG",
+  "Cabo Verde":"CPV","Egypt":"EGY","Czechia":"CZE","United States":"USA","Bosnia and Herzegovina":"BIH",
+  "Spain":"ESP","Austria":"AUT","Switzerland":"SUI","Belgium":"BEL","Portugal":"POR",
+  "Ghana":"GHA","Australia":"AUS","Iran":"IRN","Argentina":"ARG","Uruguay":"URU",
+  "Colombia":"COL","Croatia":"CRO"
 };
 
 /* helpers: T = confirmed team, P = projected placeholder slot */
@@ -25,36 +28,39 @@ function T(name, seed){ return {name, seed, tbd:false}; }
 function P(name, seed){ return {name, seed, tbd:true}; }
 
 /* Round of 32 — ordered to match the bracket tree top-to-bottom.
+   This sequence is the canonical spatial order: walking TREE from the Final
+   down (top feeder first) places every later-round match between its two
+   feeders. Reorder here (not the logic) if the tree ever changes.
    Each match: { id, a, b } */
 const R32 = [
-  {id:73, a:T("South Africa","2A"),  b:T("Canada","2B")},
-  {id:75, a:T("Netherlands","1F"),   b:T("Morocco","2C")},
   {id:74, a:T("Germany","1E"),       b:T("Paraguay","3rd D")},
   {id:77, a:P("France","1I"),        b:P("Sweden","3rd C/D/F/G/H")},
+  {id:73, a:T("South Africa","2A"),  b:T("Canada","2B")},
+  {id:75, a:T("Netherlands","1F"),   b:T("Morocco","2C")},
+  {id:83, a:P("Portugal","2K"),      b:P("Ghana","2L")},
+  {id:84, a:P("Spain","1H"),         b:P("Austria","2J")},
+  {id:81, a:T("United States","1D"), b:T("Bosnia and Herzegovina","3rd B")},
+  {id:82, a:P("Egypt","1G"),         b:P("Czechia","3rd A/E/H/I/J")},
   {id:76, a:T("Brazil","1C"),        b:T("Japan","2F")},
   {id:78, a:T("Ivory Coast","2E"),   b:T("Norway","2I")},
   {id:79, a:T("Mexico","1A"),        b:P("Scotland","3rd C/E/F/H/I")},
   {id:80, a:P("England","1L"),       b:P("Cabo Verde","3rd E/H/I/J/K")},
-  {id:81, a:T("United States","1D"), b:T("Bosnia and Herzegovina","3rd B")},
-  {id:82, a:P("Egypt","1G"),         b:P("Czechia","3rd A/E/H/I/J")},
-  {id:83, a:P("Portugal","2K"),      b:P("Ghana","2L")},
-  {id:84, a:P("Spain","1H"),         b:P("Austria","2J")},
-  {id:85, a:P("Switzerland","1B"),   b:P("Belgium","3rd E/F/G/I/J")},
   {id:86, a:T("Argentina","1J"),     b:T("Uruguay","2H")},
-  {id:87, a:P("Colombia","1K"),      b:P("Croatia","3rd D/E/I/J/L")},
-  {id:88, a:T("Australia","2D"),     b:T("Iran","2G")}
+  {id:88, a:T("Australia","2D"),     b:T("Iran","2G")},
+  {id:85, a:P("Switzerland","1B"),   b:P("Belgium","3rd E/F/G/I/J")},
+  {id:87, a:P("Colombia","1K"),      b:P("Croatia","3rd D/E/I/J/L")}
 ];
 
 /* Fixed bracket tree (FIFA published Round-of-32 paths).
    `from` lists the two feeder match ids whose winners meet. */
 const TREE = {
   r16:[
-    {id:90, from:[73,75]},
     {id:89, from:[74,77]},
-    {id:91, from:[76,78]},
-    {id:92, from:[79,80]},
+    {id:90, from:[73,75]},
     {id:93, from:[83,84]},
     {id:94, from:[81,82]},
+    {id:91, from:[76,78]},
+    {id:92, from:[79,80]},
     {id:95, from:[86,88]},
     {id:96, from:[85,87]}
   ],
@@ -78,4 +84,4 @@ const ROUND_LABEL = {r32:"Round of 32", r16:"Round of 16", qf:"Quarter-finals", 
 const ROUND_MAX  = {r32:16, r16:8, qf:4, sf:2, final:1};
 
 /* expose for bracket.js */
-window.WC = { FLAGS, R32, TREE, POINTS, ROUND_LABEL, ROUND_MAX };
+window.WC = { CODES, R32, TREE, POINTS, ROUND_LABEL, ROUND_MAX };

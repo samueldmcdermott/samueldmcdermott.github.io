@@ -1,0 +1,13 @@
+# Python (bracket scoring scripts)
+__pycache__/
+*.pyc
+
+# Jekyll build output
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp

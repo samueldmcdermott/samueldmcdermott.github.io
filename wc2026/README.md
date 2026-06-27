@@ -3,10 +3,13 @@
 An interactive, shareable FIFA World Cup 2026 knockout bracket. Tap a team to
 advance it through every round; your picks are encoded in the URL so you can
 share a fully-filled bracket with anyone. Scoring uses the conventional
-exponentially-rising scheme.
+exponentially-rising scheme. Add your name and **Submit** to enter a
+leaderboard that's scored against the real results as they come in.
 
-**No backend, no tracking, no build step.** It's three static files — drop it on
-any host.
+**No runtime backend, no tracking, no build step.** The site is static. Players
+submit with no login via a Google Form; a small Apps Script + GitHub Actions turn
+that into a scored leaderboard (see [Leaderboard](#leaderboard) and
+[SETUP.md](../SETUP.md)).
 
 ![bracket](assets/preview.svg)
 
@@ -17,12 +20,26 @@ any host.
 - **Exponential scoring** — R32 = 1, R16 = 2, QF = 4, SF = 8, Final = 16.
   A perfect bracket totals **80 points**. The live counter shows what your
   current picks are worth.
-- **Shareable URL** — every pick is saved to the address bar. "Copy share link"
-  hands someone your exact bracket.
+- **Shareable URL** — every pick (and your name) is saved to the address bar.
+  "Copy share link" hands someone your exact bracket.
+- **Two tabs** — *Your bracket* (the landing view) and *Leaderboard*, with the
+  active view reflected in the URL hash so links and the Back button work.
+- **Name + Submit + leaderboard** — enter a name and submit your bracket (no login
+  — it posts to a Google Form); an Apps Script + GitHub-Actions pipeline scores
+  everyone against the official results and publishes a ranked, timestamped
+  leaderboard right on the page.
+- **Save & reopen brackets** — enter your name and a chooser lets you reload any
+  bracket you've submitted (across devices) to view or edit it. Keep several
+  brackets per name; pick exactly one as your **official**, scored entry.
+- **Live result feedback** — as official results are recorded, a pick that's
+  proven wrong gets a red ✕, and any later pick whose team was already eliminated
+  is greyed out with an ✕ (it can no longer come true).
+- **Universal team codes** — teams render as FIFA-style three-letter codes
+  (`BRA`, `FRA`, …), so they look identical on every OS/browser (emoji flags don't).
 - **Third-place playoff** — losers of the semis, kept outside the points scheme
   (as is standard).
 - **TBD slots** — matchups not yet confirmed show their group descriptor
-  (e.g. `3rd C/D/F/G/H`) until results lock in.
+  (e.g. `3rd C/D/F/G/H`) and a dashed code badge until results lock in.
 - Responsive, keyboard-focusable, and respects `prefers-reduced-motion`.
 
 ## Quick start
@@ -54,17 +71,34 @@ There is nothing to build.
 
 ## Project structure
 
+The bracket page lives in `wc2026/`; the scoring pipeline lives at the repo root
+(so GitHub Actions picks it up).
+
 ```
-wc2026-bracket/
-├── index.html              # markup + page shell
-├── assets/
-│   ├── styles.css          # all styling (design tokens at top)
-│   └── preview.svg         # social/README preview image
-├── src/
-│   ├── data.js             # teams, bracket tree, scoring — EDIT THIS
-│   └── bracket.js          # rendering, picks, scoring, URL sharing
+<repo root>/
+├── wc2026/
+│   ├── index.html              # markup + page shell
+│   ├── assets/styles.css       # all styling (design tokens at top)
+│   ├── src/                    # ES modules (loaded from main.js)
+│   │   ├── data.js             # teams, bracket tree, scoring — EDIT THIS (classic script)
+│   │   ├── state.js            # shared state, active bracket, URL/localStorage, utils
+│   │   ├── tree.js             # match resolution: picks + official results → teams
+│   │   ├── view.js             # bracket rendering, click interaction, score readout
+│   │   ├── submissions.js      # load submissions/results + the bracket chooser
+│   │   ├── submit.js           # Google Form submit + submit dialog
+│   │   ├── leaderboard.js      # leaderboard fetch/render + tabs
+│   │   └── main.js             # entry point: wiring + init
+│   ├── data/
+│   │   ├── results.json        # OFFICIAL RESULTS — hand-edited as games finish
+│   │   └── submissions.json    # entrants' brackets (committed by the Apps Script)
+│   └── leaderboard.json        # generated standings + last-updated time (fetched by the page)
+├── scripts/
+│   └── score_bracket.py        # scores submissions vs. results (parses data.js)
+├── google-apps-script/
+│   └── Code.gs                 # form → submissions.json ingestion (runs in Google, see SETUP.md)
 ├── .github/workflows/
-│   └── deploy.yml          # GitHub Pages deployment
+│   └── leaderboard.yml         # score + commit leaderboard on each push
+├── SETUP.md                    # one-time Google Form + Apps Script setup
 ├── LICENSE
 └── README.md
 ```
@@ -81,9 +115,17 @@ P("France", "1I")   // P = projected / not-yet-locked slot (shown muted)
 ```
 
 To confirm a team, change `P(...)` to `T(...)`. To swap a team, edit the name and
-seed and make sure its flag emoji exists in the `FLAGS` map at the top of the
-file. The bracket tree (`TREE`) follows FIFA's published paths and shouldn't need
-changes.
+seed and make sure its three-letter code exists in the `CODES` map at the top of
+the file (teams render as their FIFA-style code — e.g. `BRA`, `FRA` — not emoji
+flags, so they display the same on every platform). The bracket tree (`TREE`)
+follows FIFA's published paths and shouldn't need changes.
+
+> **Array order is the layout.** `R32` (and each `TREE` round) is listed in
+> *canonical spatial order* — walking the tree from the Final down, top feeder
+> first — so every later-round match renders centered between its two feeders. If
+> you ever restructure the tree, keep each round's array in that order (a quick
+> sanity check: each match's two `from` ids must be an adjacent pair in the
+> previous round's array).
 
 ## How scoring works
 
@@ -101,7 +143,62 @@ The classic doubling scheme rewards calling the later rounds correctly:
 The counter shows the points your picks are *worth* if they all come true — it is
 a projection tool, not a result tracker.
 
+## Leaderboard
+
+The leaderboard scores each submitted bracket against the **official results** and
+ranks everyone — **no login for players, no runtime backend.**
+
+**How a submission flows in** (one-time setup in [SETUP.md](../SETUP.md))
+
+1. A visitor fills out their bracket, types a name, and clicks **Submit bracket**.
+   A dialog asks for an optional **label** (to tell several of their brackets apart)
+   and whether to **make it their official entry**.
+2. The page silently posts the bracket (name, label, encoded picks, a stable
+   **bracket id**, the official flag, timestamp) to a **Google Form** — no GitHub
+   account or login needed.
+3. A **Google Apps Script** ([`google-apps-script/Code.gs`](../google-apps-script/Code.gs))
+   bound to the form's response sheet commits the entry into
+   `wc2026/data/submissions.json`. That push triggers the
+   [`leaderboard.yml`](../.github/workflows/leaderboard.yml) workflow, which scores
+   everyone and commits `wc2026/leaderboard.json`. The page fetches it and shows the
+   standings plus a *last updated* time.
+
+**Saving & reopening brackets**
+
+Submissions persist in `wc2026/data/submissions.json`. When you enter your **name**,
+the page looks you up and — if you have saved brackets — pops a chooser to **load
+and edit** one or **start a new one**. Each bracket has a stable id, so editing and
+re-submitting updates it in place rather than creating duplicates. You can keep
+several brackets, but only **one is your official (scored) entry**: your **first**
+submission is official automatically, and submitting a later one with *Make this my
+official entry* checked promotes it and demotes the previous official one (enforced
+in the Apps Script). To change which existing bracket is official, load it from the
+chooser and re-submit it as official.
+
+> **Trust model.** Lookups are by name only, so anyone who knows a name can load and
+> edit that name's brackets — fine for a trusted group; tell players to pick a
+> not-easily-guessed name. A just-submitted bracket only appears after the Apps
+> Script commits and Pages rebuilds (seconds to a couple of minutes).
+
+**Recording results (your job, occasionally)**
+
+Edit [`wc2026/data/results.json`](data/results.json) and commit. For each match,
+set the winning side — `"a"` (top team) or `"b"` (bottom team), matching the
+slots on the page — and leave unplayed matches `null`:
+
+```json
+{ "winners": { "104": "a", "101": "b", "97": null } }
+```
+
+Committing that file re-runs the workflow, which re-scores every submission and
+refreshes the leaderboard's timestamp. Scoring reuses the same exponential weights
+as above (the third-place match is excluded, as on the page).
+
+> Run the scorer locally anytime with `python3 scripts/score_bracket.py` — it reads
+> `results.json` + `submissions.json` and rewrites `leaderboard.json`. Stdlib only,
+> no dependencies.
+
 ## License
 
-MIT — see [LICENSE](LICENSE). Flag emoji are rendered by the OS font.
+MIT — see [LICENSE](LICENSE). Teams are shown as FIFA-style three-letter codes.
 Team data is factual tournament information.
