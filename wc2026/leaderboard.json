@@ -1,6 +1,17 @@
 {
-  "updatedAt": "2026-06-27T18:59:09Z",
+  "updatedAt": "2026-06-27T19:02:40Z",
   "resultsCount": 0,
   "maxPossible": 0,
-  "entries": []
+  "entries": [
+    {
+      "user": "cedar ave buster",
+      "label": "260627_150230",
+      "bid": "mqwq8tnt7qkm",
+      "score": 0,
+      "correct": 0,
+      "maxPossible": 0,
+      "submittedAt": "2026-06-27T19:02:30.186Z",
+      "issue": null
+    }
+  ]
 }
