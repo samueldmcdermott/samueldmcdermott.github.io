@@ -30,7 +30,8 @@ var FIELD_TITLES = {
   picks:       "Picks",
   bid:         "Bracket id",
   official:    "Official",
-  submittedAt: "Submitted at"
+  submittedAt: "Submitted at",
+  pinHash:     "Pin hash"
 };
 
 var SUBMISSIONS_PATH = "wc2026/data/submissions.json";
@@ -53,6 +54,7 @@ function onFormSubmit(e) {
   var gh = ghConfig_();
   var current = ghGetSubmissions_(gh);      // { list, sha }
   var list = upsert_(current.list, entry);
+  if (list === null) return;                // wrong PIN -> reject, write nothing
   // NOTE: no "[skip ci]" here — this commit SHOULD trigger the leaderboard
   // workflow so the new submission gets scored. (The workflow only commits
   // leaderboard.json, which is not in its push-path filter, so it won't loop.)
@@ -92,11 +94,18 @@ function buildEntry(v) {
 
   var official = parseOfficial_(v[T.official] || "");
   var submittedAt = (v[T.submittedAt] || "").trim() || new Date().toISOString();
+  var pinHash = cleanHash_(v[T.pinHash] || "");
 
   return {
     user: name, bid: bid, label: label, official: official,
-    picks: picks, submittedAt: submittedAt, source: "google-form"
+    picks: picks, pinHash: pinHash, submittedAt: submittedAt, source: "google-form"
   };
+}
+
+/* a SHA-256 hex digest is 64 hex chars; ignore anything else */
+function cleanHash_(raw) {
+  var m = String(raw).trim().toLowerCase().match(/^[0-9a-f]{64}$/);
+  return m ? m[0] : "";
 }
 
 function cleanPicks_(raw) {
@@ -113,14 +122,32 @@ function parseOfficial_(raw) {
   return ["yes", "y", "true", "on", "1"].indexOf(String(raw).trim().toLowerCase()) >= 0;
 }
 
-/* ---- merge: upsert by bid; one official per name; first = official ---- */
+/* ---- merge: PIN-gate writes; upsert by bid; one official per name; first = official.
+   Returns the new list, or null if the write is rejected (wrong PIN). ---- */
 function upsert_(list, entry) {
   list = Array.isArray(list) ? list : [];
   var nl = entry.user.toLowerCase();
-  var hadAny = list.some(function (s) { return (s.user || "").toLowerCase() === nl; });
-  var hadOfficial = list.some(function (s) {
-    return (s.user || "").toLowerCase() === nl && s.official;
-  });
+  var mine = list.filter(function (s) { return (s.user || "").toLowerCase() === nl; });
+  var hadAny = mine.length > 0;
+  var hadOfficial = mine.some(function (s) { return s.official; });
+
+  // PIN enforcement. A name's "established PIN" is the pinHash on any of its
+  // existing submissions (they're identical once set).
+  var establishedPin = "";
+  for (var i = 0; i < mine.length; i++) {
+    if (mine[i].pinHash) { establishedPin = mine[i].pinHash; break; }
+  }
+  if (establishedPin) {
+    // existing name with a PIN -> the incoming pinHash must match to write
+    if (entry.pinHash !== establishedPin) {
+      Logger.log("Rejected: wrong PIN for name %s (bid %s)", entry.user, entry.bid);
+      return null;
+    }
+  } else if (hadAny && !entry.pinHash) {
+    // legacy name with no PIN on record and none supplied -> allow (back-compat)
+    // (the first submission that supplies a pinHash will establish it)
+  }
+  // a brand-new name simply sets its PIN via this entry's pinHash.
 
   // drop the previous version of this exact bracket
   list = list.filter(function (s) { return s.bid !== entry.bid; });

@@ -7,10 +7,9 @@ import {
   state, nameInput, persistName, saveURL, showToast, loadURL
 } from "./state.js";
 import { render } from "./view.js";
-import {
-  loadSubmissions, loadResults, maybeOfferBrackets, initChooser
-} from "./submissions.js";
+import { loadSubmissions, loadResults } from "./submissions.js";
 import { initSubmit } from "./submit.js";
+import { initChooser, refreshChooser } from "./chooser.js";
 import { loadLeaderboard, initTabs } from "./leaderboard.js";
 
 /* ---- copy share link + reset ---- */
@@ -33,9 +32,9 @@ function initToolbar(){
     saveURL(); render(); showToast("Bracket reset");
   });
 
-  // persist the name as it's typed; look up existing brackets when it settles
+  // persist the name as it's typed; refresh the bracket dropdown when it settles
   nameInput.addEventListener('input',()=>{ persistName(); saveURL(); });
-  nameInput.addEventListener('change',()=>{ maybeOfferBrackets(false); });
+  nameInput.addEventListener('change',()=>{ refreshChooser(); });
 }
 
 /* ---- init ---- */
@@ -47,6 +46,5 @@ initChooser();
 initTabs();
 loadResults();
 loadLeaderboard();
-// After submissions load, offer the chooser if this name already has brackets
-// and the board is empty (don't interrupt an in-progress or shared bracket).
-loadSubmissions().then(()=>{ maybeOfferBrackets(false); });
+// Populate the inline bracket dropdown once submissions are loaded.
+loadSubmissions().then(()=>{ refreshChooser(); });

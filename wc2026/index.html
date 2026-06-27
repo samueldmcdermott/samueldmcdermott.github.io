@@ -54,6 +54,18 @@
     </div>
   </div>
 
+  <!-- inline chooser: shown when the entered name has saved brackets -->
+  <div class="chooserbar" id="chooserBar" hidden>
+    <label class="chooser-field">
+      <span class="chooser-lbl">Your brackets</span>
+      <select id="bracketSelect"></select>
+    </label>
+    <label class="chooser-official" id="makeOfficialWrap">
+      <input type="checkbox" id="makeOfficial">
+      <span>Make this my official entry</span>
+    </label>
+  </div>
+
   <div class="scroll">
     <div class="bracket" id="bracket"></div>
   </div>
@@ -66,8 +78,16 @@
   </div>
   <p class="lb-note">
     Scored against the official results as they come in. Fill out your bracket on
-    the <b>Your bracket</b> tab, add your name, and hit <b>Submit bracket</b> to enter.
+    the <b>Your bracket</b> tab, add your name + PIN, and hit <b>Submit bracket</b> to
+    enter. Ties are broken by the third-place game.
   </p>
+  <div class="lb-colhead" id="lbColhead" hidden>
+    <span class="lb-rank">#</span>
+    <span class="lb-name">Name</span>
+    <span class="lb-final">Final pick</span>
+    <span class="lb-max">Max</span>
+    <span class="lb-score">Pts</span>
+  </div>
   <ol class="lb-list" id="lbList"></ol>
 </section>
 
@@ -86,31 +106,23 @@
 
 <div class="toast" id="toast">Link copied</div>
 
-<!-- Bracket chooser: shown when the entered name already has submitted brackets -->
-<dialog class="dlg" id="bracketPicker">
-  <form method="dialog" class="dlg-card">
-    <div class="dlg-head">
-      <h3 id="pickerTitle">Your brackets</h3>
-      <button class="dlg-x" value="cancel" aria-label="Close">✕</button>
-    </div>
-    <p class="dlg-note">
-      Pick a bracket to load and edit, or start a new one. Brackets you've just
-      submitted can take a minute to appear here.
-    </p>
-    <ul class="dlg-list" id="pickerList"></ul>
-    <div class="dlg-actions">
-      <button class="act" id="newBracketBtn" value="new" type="button">+ Create a new bracket</button>
-    </div>
-  </form>
-</dialog>
-
-<!-- Pre-submit dialog: label + official choice -->
+<!-- Pre-submit dialog: name reminder + label + PIN + official choice -->
 <dialog class="dlg" id="submitDialog">
   <form method="dialog" class="dlg-card">
     <div class="dlg-head">
       <h3>Submit bracket</h3>
       <button class="dlg-x" value="cancel" aria-label="Close">✕</button>
     </div>
+    <p class="dlg-note">
+      You'll appear on the leaderboard as <b id="submitNameEcho">your name</b>.
+      Change it in the <b>Your name</b> box if needed.
+    </p>
+    <label class="dlg-field">
+      <span>PIN</span>
+      <input type="password" id="submitPin" inputmode="numeric" maxlength="20"
+             autocomplete="off" placeholder="••••">
+      <small id="pinHint">Set a PIN — you'll need it to edit or re-submit under this name.</small>
+    </label>
     <label class="dlg-field">
       <span>Label <em>(optional)</em></span>
       <input type="text" id="submitLabel" maxlength="40" spellcheck="false"

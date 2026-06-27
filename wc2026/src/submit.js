@@ -3,12 +3,18 @@
    (silent, stays on the page); an Apps Script bound to the form's
    response sheet commits it to data/submissions.json and the
    leaderboard workflow re-scores. See SETUP.md to wire up the form.
+
+   A name is paired with a PIN: the PIN is hashed in the browser
+   (crypto.js) and only the hash is sent, so the maintainer never
+   sees it. Once a name has submitted, further writes to that name
+   require the matching PIN (enforced by the Apps Script).
    ============================================================ */
 import {
   state, getName, nameInput, ensureBid, setActive, saveURL,
   encodePicks, showToast, TREE
 } from "./state.js";
 import { subsForName } from "./submissions.js";
+import { pinHashFor } from "./crypto.js";
 
 /* ------------------------------------------------------------
    Fill these in from your Google Form (Send ▸ link, and "Get
@@ -25,14 +31,18 @@ const FORM = {
     picks:      "entry.220264991",
     bid:        "entry.572387553",
     official:   "entry.1591925697",
-    submittedAt:"entry.1267483993"
+    submittedAt:"entry.1267483993",
+    // ADD a "Pin hash" question to the form and paste its entry id here:
+    pinHash:    "entry.1500950813"
   }
 };
 const formConfigured = () => !FORM.action.includes("REPLACE_WITH_FORM_ID");
+const pinHashConfigured = () => !FORM.fields.pinHash.includes("REPLACE_WITH");
 
 const submitDialog   = document.getElementById('submitDialog');
 const submitLabelIn  = document.getElementById('submitLabel');
 const submitOfficial = document.getElementById('submitOfficial');
+const submitPinIn    = document.getElementById('submitPin');
 
 /* YYMMDD_HHMMSS in local time — used as the label when none is given. */
 function stampLabel(d){
@@ -42,21 +52,26 @@ function stampLabel(d){
     +"_"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
 }
 
-/* Has this name already submitted at least once? (drives the official default
-   and the auto-first-official behavior — first bracket is official.) */
-function nameHasSubmissions(nm){ return subsForName(nm).length > 0; }
+/* Submissions already saved under a name (to drive defaults + the PIN check). */
+function mySubs(nm){ return subsForName(nm); }
+/* The PIN hash already established for this name, if any. */
+function establishedPinHash(nm){
+  const s = mySubs(nm).find(x => x.pinHash);
+  return s ? s.pinHash : "";
+}
 
-function submitBracket(nm, label, official){
+async function submitBracket(nm, label, pin, official){
   ensureBid();
   const finalLabel = label || stampLabel();
   setActive(state.activeBid, label);   // keep the user-typed label (may be blank) locally
   saveURL();
   const enc = encodePicks();
+  const hash = await pinHashFor(nm, pin);
 
   if(!formConfigured()){
     // Not wired up yet: fall back to copying a paste-able record.
     const rec = JSON.stringify({user:nm, bid:state.activeBid, label:finalLabel,
-      official:official, picks:enc, submittedAt:new Date().toISOString()});
+      official:official, picks:enc, pinHash:hash, submittedAt:new Date().toISOString()});
     if(navigator.clipboard) navigator.clipboard.writeText(rec).catch(()=>{});
     showToast("Form not set up yet — record copied to clipboard");
     return;
@@ -69,26 +84,60 @@ function submitBracket(nm, label, official){
   body.append(FORM.fields.bid, state.activeBid);
   body.append(FORM.fields.official, official ? "Yes" : "No");
   body.append(FORM.fields.submittedAt, new Date().toISOString());
+  if(pinHashConfigured()) body.append(FORM.fields.pinHash, hash);
   // Google Forms has no CORS endpoint; fire-and-forget with no-cors. The
   // response is opaque, so we optimistically report success.
   fetch(FORM.action, {method:"POST", mode:"no-cors", body}).then(()=>{}, ()=>{});
   showToast("Bracket submitted! It’ll appear on the leaderboard shortly.");
 }
 
+/* Open the submit dialog. opts.forceOfficial pre-checks "official" (used by the
+   make-this-official toggle). */
+function openSubmitDialog(opts){
+  opts = opts || {};
+  const nm = getName();
+  if(!nm){ nameInput.focus(); showToast("Add your name first"); return; }
+  if(!state.picks[String(TREE.final.id)]){ showToast("Pick a champion before submitting"); return; }
+  submitLabelIn.value = state.activeLabel || "";
+  submitPinIn.value = "";
+  const echo = document.getElementById('submitNameEcho');
+  if(echo) echo.textContent = nm;
+  // Default official: forced on for a make-official action; else true only for a
+  // name's first-ever bracket.
+  submitOfficial.checked = opts.forceOfficial ? true : (mySubs(nm).length === 0);
+  // hint whether a PIN is being set vs. entered
+  const hint = document.getElementById('pinHint');
+  if(hint){
+    hint.textContent = establishedPinHash(nm)
+      ? "Enter your PIN for this name."
+      : "Set a PIN — you'll need it to edit or re-submit under this name.";
+  }
+  if(typeof submitDialog.showModal === "function") submitDialog.showModal();
+  else confirmSubmit();   // no <dialog> support: submit immediately
+}
+
+async function confirmSubmit(){
+  const nm = getName();
+  const pin = (submitPinIn.value || "").trim();
+  if(!pin){ submitPinIn.focus(); showToast("Enter a PIN"); return; }
+  // Friendly client-side PIN check against the established hash (the Apps Script
+  // also enforces this server-side).
+  const established = establishedPinHash(nm);
+  if(established){
+    const h = await pinHashFor(nm, pin);
+    if(h !== established){ submitPinIn.focus(); showToast("Wrong PIN for that name"); return; }
+  }
+  submitDialog.close();
+  await submitBracket(nm, submitLabelIn.value.trim(), pin, submitOfficial.checked);
+}
+
+/* Called by the chooser's "make this official" toggle. */
+export function requestMakeOfficial(){
+  openSubmitDialog({forceOfficial:true});
+}
+
 export function initSubmit(){
-  document.getElementById('submitBtn').addEventListener('click',()=>{
-    const nm = getName();
-    if(!nm){ nameInput.focus(); showToast("Add your name first"); return; }
-    if(!state.picks[String(TREE.final.id)]){ showToast("Pick a champion before submitting"); return; }
-    submitLabelIn.value = state.activeLabel || "";
-    // Default: first bracket for this name is official; later ones aren't.
-    submitOfficial.checked = !nameHasSubmissions(nm);
-    if(typeof submitDialog.showModal === "function") submitDialog.showModal();
-    else submitBracket(nm, submitLabelIn.value.trim(), submitOfficial.checked);
-  });
-  document.getElementById('submitConfirmBtn').addEventListener('click',()=>{
-    submitDialog.close();
-    submitBracket(getName(), submitLabelIn.value.trim(), submitOfficial.checked);
-  });
-  document.getElementById('submitCancelBtn').addEventListener('click',()=>submitDialog.close());
+  document.getElementById('submitBtn').addEventListener('click',()=> openSubmitDialog());
+  document.getElementById('submitConfirmBtn').addEventListener('click',()=> confirmSubmit());
+  document.getElementById('submitCancelBtn').addEventListener('click',()=> submitDialog.close());
 }

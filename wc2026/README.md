@@ -24,13 +24,17 @@ that into a scored leaderboard (see [Leaderboard](#leaderboard) and
   "Copy share link" hands someone your exact bracket.
 - **Two tabs** — *Your bracket* (the landing view) and *Leaderboard*, with the
   active view reflected in the URL hash so links and the Back button work.
-- **Name + Submit + leaderboard** — enter a name and submit your bracket (no login
-  — it posts to a Google Form); an Apps Script + GitHub-Actions pipeline scores
-  everyone against the official results and publishes a ranked, timestamped
-  leaderboard right on the page.
-- **Save & reopen brackets** — enter your name and a chooser lets you reload any
-  bracket you've submitted (across devices) to view or edit it. Keep several
-  brackets per name; pick exactly one as your **official**, scored entry.
+- **Name + PIN + Submit + leaderboard** — enter a name (shown on the leaderboard)
+  and a PIN, and submit your bracket (no login — it posts to a Google Form). The
+  PIN is **hashed in the browser** so it's never seen; it protects later edits under
+  your name. An Apps Script + GitHub-Actions pipeline scores everyone against the
+  official results and publishes a ranked, timestamped leaderboard showing each
+  player's **points, max still reachable, and final-game prediction**. Ties break on
+  the third-place game.
+- **Save & reopen brackets** — enter your name and an inline **dropdown** lists every
+  bracket you've submitted (across devices) to view or edit; the official one is
+  marked, and a toggle promotes any of them to official. Keep several brackets per
+  name; exactly one is your **official**, scored entry.
 - **Live result feedback** — as official results are recorded, a pick that's
   proven wrong gets a red ✕, and any later pick whose team was already eliminated
   is greyed out with an ✕ (it can no longer come true).
@@ -82,10 +86,12 @@ The bracket page lives in `wc2026/`; the scoring pipeline lives at the repo root
 │   ├── src/                    # ES modules (loaded from main.js)
 │   │   ├── data.js             # teams, bracket tree, scoring — EDIT THIS (classic script)
 │   │   ├── state.js            # shared state, active bracket, URL/localStorage, utils
+│   │   ├── crypto.js           # client-side PIN hashing (SHA-256)
 │   │   ├── tree.js             # match resolution: picks + official results → teams
 │   │   ├── view.js             # bracket rendering, click interaction, score readout
-│   │   ├── submissions.js      # load submissions/results + the bracket chooser
-│   │   ├── submit.js           # Google Form submit + submit dialog
+│   │   ├── submissions.js      # load submissions/results + bracket helpers
+│   │   ├── chooser.js          # inline bracket dropdown + make-official toggle
+│   │   ├── submit.js           # Google Form submit + submit dialog (PIN here)
 │   │   ├── leaderboard.js      # leaderboard fetch/render + tabs
 │   │   └── main.js             # entry point: wiring + init
 │   ├── data/
@@ -150,35 +156,38 @@ ranks everyone — **no login for players, no runtime backend.**
 
 **How a submission flows in** (one-time setup in [SETUP.md](../SETUP.md))
 
-1. A visitor fills out their bracket, types a name, and clicks **Submit bracket**.
-   A dialog asks for an optional **label** (to tell several of their brackets apart)
+1. A visitor fills out their bracket, types a **name** (shown on the leaderboard),
+   and clicks **Submit bracket**. A dialog asks for a **PIN**, an optional **label**,
    and whether to **make it their official entry**.
-2. The page silently posts the bracket (name, label, encoded picks, a stable
-   **bracket id**, the official flag, timestamp) to a **Google Form** — no GitHub
+2. The page hashes the PIN (SHA-256, in the browser) and silently posts the bracket
+   (name, label, encoded picks, a stable **bracket id**, the official flag,
+   timestamp, and the **PIN hash** — never the PIN) to a **Google Form** — no GitHub
    account or login needed.
 3. A **Google Apps Script** ([`google-apps-script/Code.gs`](../google-apps-script/Code.gs))
-   bound to the form's response sheet commits the entry into
-   `wc2026/data/submissions.json`. That push triggers the
+   bound to the form's response sheet verifies the PIN (for an existing name) and
+   commits the entry into `wc2026/data/submissions.json`. That push triggers the
    [`leaderboard.yml`](../.github/workflows/leaderboard.yml) workflow, which scores
-   everyone and commits `wc2026/leaderboard.json`. The page fetches it and shows the
-   standings plus a *last updated* time.
+   everyone and commits `wc2026/leaderboard.json`. The page fetches it and shows each
+   player's **points, max still reachable, and final-game prediction**, plus a *last
+   updated* time. Ties are broken by the third-place game.
 
 **Saving & reopening brackets**
 
 Submissions persist in `wc2026/data/submissions.json`. When you enter your **name**,
-the page looks you up and — if you have saved brackets — pops a chooser to **load
-and edit** one or **start a new one**. Each bracket has a stable id, so editing and
-re-submitting updates it in place rather than creating duplicates. You can keep
-several brackets, but only **one is your official (scored) entry**: your **first**
-submission is official automatically, and submitting a later one with *Make this my
-official entry* checked promotes it and demotes the previous official one (enforced
-in the Apps Script). To change which existing bracket is official, load it from the
-chooser and re-submit it as official.
+the **Your bracket** tab shows an inline **dropdown** of every bracket you've saved
+(the official one marked) plus a *New bracket* option; pick one to load and edit it.
+A **Make this official** toggle promotes the selected bracket. Each bracket has a
+stable id, so editing and re-submitting updates it in place rather than creating
+duplicates. Only **one is your official (scored) entry**: your **first** submission
+is official automatically; promoting another re-submits it as official (PIN
+required) and demotes the previous one (enforced in the Apps Script).
 
-> **Trust model.** Lookups are by name only, so anyone who knows a name can load and
-> edit that name's brackets — fine for a trusted group; tell players to pick a
-> not-easily-guessed name. A just-submitted bracket only appears after the Apps
-> Script commits and Pages rebuilds (seconds to a couple of minutes).
+> **Trust / PIN.** The first submission for a name sets that name's PIN (hashed in
+> the browser — the maintainer never sees it). Later edits, new brackets, or
+> official changes under that name require the matching PIN. Reading data is public,
+> so pick a name that isn't trivially guessable. A just-submitted change only
+> appears after the Apps Script commits and Pages rebuilds (seconds to a couple of
+> minutes).
 
 **Recording results (your job, occasionally)**
 
@@ -187,12 +196,13 @@ set the winning side — `"a"` (top team) or `"b"` (bottom team), matching the
 slots on the page — and leave unplayed matches `null`:
 
 ```json
-{ "winners": { "104": "a", "101": "b", "97": null } }
+{ "winners": { "104": "a", "101": "b", "97": null, "103": "a" } }
 ```
 
 Committing that file re-runs the workflow, which re-scores every submission and
 refreshes the leaderboard's timestamp. Scoring reuses the same exponential weights
-as above (the third-place match is excluded, as on the page).
+above. Match **`103`** (third-place game) earns no points but **breaks ties**:
+among players level on points, the one who predicted 103 correctly ranks higher.
 
 > Run the scorer locally anytime with `python3 scripts/score_bracket.py` — it reads
 > `results.json` + `submissions.json` and rewrites `leaderboard.json`. Stdlib only,

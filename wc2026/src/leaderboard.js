@@ -11,18 +11,23 @@ export function renderLeaderboard(data){
   state.lbByBid = {};
   entries.forEach(e=>{ if(e.bid) state.lbByBid[e.bid]=e; });
   updEl.textContent = (data && data.updatedAt) ? fmtUpdated(data.updatedAt) : "";
+  const colhead = document.getElementById('lbColhead');
   if(!entries.length){
+    if(colhead) colhead.hidden = true;
     listEl.innerHTML = `<li class="lb-empty">No brackets scored yet — be the first to submit.</li>`;
     return;
   }
+  if(colhead) colhead.hidden = false;
   const me = getName().toLowerCase();
   listEl.innerHTML = entries.map((e,i)=>{
     const mine = me && String(e.user||"").toLowerCase()===me ? " mine" : "";
-    const correct = (e.correct!=null) ? `<span class="lb-correct">${e.correct} correct</span>` : "";
+    const final = e.finalPick ? esc(e.finalPick) : "—";
+    const max = (e.maxPossible!=null) ? e.maxPossible : "";
     return `<li class="lb-row${mine}">
       <span class="lb-rank">${i+1}</span>
       <span class="lb-name">${esc(e.user||"—")}</span>
-      ${correct}
+      <span class="lb-final">${final}</span>
+      <span class="lb-max">${max}</span>
       <span class="lb-score">${e.score!=null?e.score:0}</span>
     </li>`;
   }).join("");

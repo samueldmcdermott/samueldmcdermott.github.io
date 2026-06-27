@@ -26,15 +26,22 @@ Apps Script reads):
 
 | Question title | What it holds |
 |----------------|---------------|
-| `Name`         | player name |
+| `Name`         | player name (shown on the leaderboard) |
 | `Label`        | optional bracket label |
 | `Picks`        | encoded picks string |
 | `Bracket id`   | stable bracket id |
 | `Official`     | `Yes` / `No` |
 | `Submitted at` | ISO timestamp |
+| `Pin hash`     | hashed PIN (never the PIN itself) |
 
 In the form: **Settings → Responses → turn OFF “Limit to 1 response”** and
 **“Collect email addresses”** (so players don't need to sign in).
+
+> The **PIN** protects a name: the first submission for a name sets its PIN, and
+> later edits / re-submits under that name need the matching PIN. The browser only
+> ever sends a SHA-256 **hash** of the PIN (the `Pin hash` field) — you never see
+> the PIN. Names are **public** (anyone can read the committed data), so tell
+> players to pick a name that isn't trivially guessable.
 
 ## 2. Get the POST URL and field ids (for the website)
 
@@ -45,8 +52,8 @@ In the form: **Settings → Responses → turn OFF “Limit to 1 response”** a
   click **Get link → Copy link**. The link contains `entry.NNNNNNNNN=Name`,
   `entry.MMMMMMMMM=Picks`, etc. Each `entry.XXXXX` is that field's id.
 
-Open [`wc2026/src/bracket.js`](wc2026/src/bracket.js), find the `FORM` config near
-the top of the SUBMIT section, and fill it in:
+Open [`wc2026/src/submit.js`](wc2026/src/submit.js), find the `FORM` config near
+the top, and fill it in:
 
 ```js
 const FORM = {
@@ -57,13 +64,16 @@ const FORM = {
     picks:       "entry.__________",
     bid:         "entry.__________",
     official:    "entry.__________",
-    submittedAt: "entry.__________"
+    submittedAt: "entry.__________",
+    pinHash:     "entry.__________"
   }
 };
 ```
 
-(Until you fill this in, the Submit button copies a paste-able record to the
-clipboard instead of posting — handy for testing, but nothing reaches the form.)
+(Until you fill in `action`, the Submit button copies a paste-able record to the
+clipboard instead of posting — handy for testing, but nothing reaches the form.
+Until you fill in `pinHash`, submissions post without a PIN, so PIN protection is
+off. Set both for the full experience.)
 
 ## 3. Link the form to a sheet + add the Apps Script
 
@@ -117,13 +127,20 @@ Submit a bracket from the site. Within a minute you should see:
   their scored entry; later ones aren't unless they tick *Make this my official
   entry* (which then demotes the previous official). Enforced in the Apps Script.
 - **No labels?** Blank labels become the submission time `YYMMDD_HHMMSS`.
-- **Trust:** lookups are by name only — anyone who knows a name can load/edit that
-  name's brackets. Tell players to pick a not-easily-guessed name.
+- **PIN protection.** The first submission for a name sets its PIN (hashed in the
+  browser); later edits / new brackets / official changes under that name require
+  the matching PIN — the Apps Script rejects writes with the wrong PIN. The
+  maintainer never sees the PIN. *Reading* is still public, so names should not be
+  trivially guessable.
+- **Leaderboard tiebreak = the third-place game.** Record match **`103`** in
+  `results.json` (`"a"`/`"b"`) once the 3rd-place game is played. It's worth no
+  points but breaks ties: among players level on points, whoever predicted 103
+  correctly ranks higher.
 - **Quota:** Apps Script free `UrlFetchApp` is ~20k calls/day and Forms responses
   are unlimited — far beyond a friend pool.
 - **Silent POST caveat:** the page posts with `no-cors`, so it can't read Google's
   response; it optimistically shows “submitted.” If a player closes the tab the
   instant they click, the post may not complete — practically a non-issue.
-- **Recording results** is unchanged: edit
-  [`wc2026/data/results.json`](wc2026/data/results.json) and commit; the workflow
-  re-scores. See the bracket [README](wc2026/README.md#leaderboard).
+- **Recording results:** edit [`wc2026/data/results.json`](wc2026/data/results.json)
+  and commit (including `103` for the tiebreak); the workflow re-scores. See the
+  bracket [README](wc2026/README.md#leaderboard).
