@@ -53,8 +53,11 @@ function onFormSubmit(e) {
   var gh = ghConfig_();
   var current = ghGetSubmissions_(gh);      // { list, sha }
   var list = upsert_(current.list, entry);
+  // NOTE: no "[skip ci]" here — this commit SHOULD trigger the leaderboard
+  // workflow so the new submission gets scored. (The workflow only commits
+  // leaderboard.json, which is not in its push-path filter, so it won't loop.)
   ghPutSubmissions_(gh, list, current.sha,
-    "chore: bracket submission from " + entry.user + " [skip ci]");
+    "chore: bracket submission from " + entry.user);
 }
 
 /* ---- read the just-submitted row as a title->value map ---- */
