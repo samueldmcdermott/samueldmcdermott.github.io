@@ -20,12 +20,12 @@ const FORM = {
   action: "https://docs.google.com/forms/d/e/1FAIpQLSdWlPflsuHzFEnmxC3uWIZjtSSjXMKBqjWDF2zetyEGL1kcIQ/formResponse",
   // Map each bracket field to its Google Form entry id:
   fields: {
-    name:       "entry.0000000001",
-    label:      "entry.0000000002",
-    picks:      "entry.0000000003",
-    bid:        "entry.0000000004",
-    official:   "entry.0000000005",
-    submittedAt:"entry.0000000006"
+    name:       "entry.1041218534",
+    label:      "entry.1326606238",
+    picks:      "entry.220264991",
+    bid:        "entry.572387553",
+    official:   "entry.1591925697",
+    submittedAt:"entry.1267483993"
   }
 };
 const formConfigured = () => !FORM.action.includes("REPLACE_WITH_FORM_ID");
