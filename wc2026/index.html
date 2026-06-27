@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 — Knockout Bracket</title>
+<meta name="description" content="Interactive, shareable FIFA World Cup 2026 knockout bracket with exponential scoring. Tap to advance teams; picks save to the URL.">
+<meta name="color-scheme" content="dark">
+
+<!-- Open Graph / social share -->
+<meta property="og:title" content="World Cup 2026 — Knockout Bracket">
+<meta property="og:description" content="Fill in your World Cup 2026 knockout predictions. Picks save to the URL — share your bracket with anyone.">
+<meta property="og:type" content="website">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">FIFA World Cup 26 · Canada · Mexico · USA</p>
+  <h1>Knockout <span class="acc">Bracket</span></h1>
+  <p class="sub">
+    Tap a team to send it through. Picks save to the URL automatically — hit <b>Copy share link</b> to send your filled bracket to anyone.
+    Points rise exponentially each round: <b>R32 = 1</b>, <b>R16 = 2</b>, <b>QF = 4</b>, <b>SF = 8</b>, <b>Final = 16</b>.
+    Matchups still TBD show as group slots (e.g. <b>3rd C/D/F/G/H</b>) until those teams are confirmed.
+  </p>
+</header>
+
+<div class="scorebar">
+  <div class="score-pill">
+    <span class="num" id="totalScore">0</span>
+    <span class="lbl">Max points<br>picked</span>
+  </div>
+  <div class="rounds-mini" id="roundsMini"></div>
+  <div class="bar-actions">
+    <button class="act" id="copyBtn">Copy share link</button>
+    <button class="act ghost" id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<div class="scroll">
+  <div class="bracket" id="bracket"></div>
+</div>
+
+<footer>
+  <b>How scoring works.</b> Each correct pick is worth more the deeper the round — the classic doubling scheme rewards calling the late rounds right.
+  A perfect bracket totals <b>80 points</b> (16·1 + 8·2 + 4·4 + 2·8 + 1·16 — every round is worth 16). The counter above shows the total points your current picks are <i>worth</i> if they all come true.
+  <div class="legend">
+    <span><span class="dot" style="background:var(--win)"></span> Advanced</span>
+    <span><span class="dot" style="background:var(--gold)"></span> Champion / winner marker</span>
+    <span><span class="dot" style="background:var(--card)"></span> Undecided</span>
+  </div>
+  <p class="credit">Bracket structure per FIFA's published Round-of-32 paths. Matchups reflect group-stage projections as of June 2026 and update as results are confirmed. Built as a static site — no tracking, no backend.</p>
+</footer>
+
+<div class="toast" id="toast">Link copied</div>
+
+<script src="src/data.js"></script>
+<script src="src/bracket.js"></script>
+</body>
+</html>
