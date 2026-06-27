@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-27T19:50:08Z",
+  "updatedAt": "2026-06-27T22:36:34Z",
   "resultsCount": 0,
   "thirdDecided": false,
   "entries": [
@@ -12,6 +12,16 @@
       "finalPick": "JPN beats MAR",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-27T19:05:47.167Z"
+    },
+    {
+      "user": "Test",
+      "bid": "mqwxvvgtnato",
+      "score": 0,
+      "correct": 0,
+      "maxPossible": 80,
+      "finalPick": "BRA beats ESP",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-27T22:36:22.951Z"
     }
   ]
 }
