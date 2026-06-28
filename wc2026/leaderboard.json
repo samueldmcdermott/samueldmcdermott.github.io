@@ -1,6 +1,17 @@
 {
-  "updatedAt": "2026-06-28T02:39:00Z",
+  "updatedAt": "2026-06-28T20:11:01Z",
   "resultsCount": 0,
   "thirdDecided": false,
-  "entries": []
+  "entries": [
+    {
+      "user": "M",
+      "bid": "mqy84hkagzdz",
+      "score": 0,
+      "correct": 0,
+      "maxPossible": 80,
+      "finalPick": "NED beats JPN",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-28T20:10:47.161Z"
+    }
+  ]
 }
