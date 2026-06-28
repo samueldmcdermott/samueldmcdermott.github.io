@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "user": "M",
+    "bid": "mqy84hkagzdz",
+    "label": "260628_161047",
+    "official": true,
+    "picks": "73b,74a,75a,76b,77a,78a,79a,80a,81a,82a,83a,84a,85b,86a,87b,88b,89b,90b,91a,92a,93b,94a,95a,96b,97b,98b,99a,100a,101a,102a,104a",
+    "pinHash": "e68d73fd9ad965a54b6b83ce9f92bd4a4b45574402f610b8870b5838503a4773",
+    "submittedAt": "2026-06-28T20:10:47.161Z",
+    "source": "google-form"
+  }
+]
