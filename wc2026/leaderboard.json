@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-06-28T22:09:42Z",
-  "resultsCount": 0,
+  "updatedAt": "2026-06-28T22:16:26Z",
+  "resultsCount": 1,
   "thirdDecided": false,
   "entries": [
     {
       "user": "M",
       "bid": "mqy84hkagzdz",
-      "score": 0,
-      "correct": 0,
+      "score": 1,
+      "correct": 1,
       "maxPossible": 80,
       "finalPick": "NED beats JPN",
       "thirdCorrect": 0,
@@ -16,8 +16,8 @@
     {
       "user": "Sam",
       "bid": "mqycd68094s6",
-      "score": 0,
-      "correct": 0,
+      "score": 1,
+      "correct": 1,
       "maxPossible": 80,
       "finalPick": "BRA beats ESP",
       "thirdCorrect": 0,
