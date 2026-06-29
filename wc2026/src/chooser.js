@@ -1,7 +1,12 @@
 /* ============================================================
-   Inline bracket chooser (Your-bracket tab). A dropdown of the
-   current name's saved submissions + a "make this official"
-   toggle. Replaces the old modal pop-up.
+   Inline bracket chooser (Your-bracket tab). A row of buttons —
+   one per saved bracket under the current name, plus "New bracket"
+   — and a "make this official" toggle. PIN-gated: an existing name
+   must enter its PIN before its brackets load.
+
+   This replaced a native <select>, whose OS-drawn dropdown was
+   unreliable (it sometimes refused to open). Buttons have none of
+   that fragility: one click loads a bracket, full stop.
    ============================================================ */
 import { state, getName, nameInput, esc, showToast, persistName, saveURL } from "./state.js";
 import {
@@ -10,16 +15,20 @@ import {
 import { requestMakeOfficial, establishedPinHash } from "./submit.js";
 import { pinHashFor } from "./crypto.js";
 
-const bar       = document.getElementById('chooserBar');
-const select    = document.getElementById('bracketSelect');
-const makeOff    = document.getElementById('makeOfficial');
+const bar         = document.getElementById('chooserBar');
+const listEl      = document.getElementById('bracketList');
+const makeOff     = document.getElementById('makeOfficial');
 const makeOffWrap = document.getElementById('makeOfficialWrap');
 
 const unlockDialog   = document.getElementById('unlockDialog');
 const unlockPinIn    = document.getElementById('unlockPin');
 const unlockNameEcho = document.getElementById('unlockNameEcho');
 
-const NEW = "__new__";
+/* bids the user started fresh via "New bracket" this session — so showChooser()
+   doesn't auto-load a saved bracket over an empty one in progress. */
+const startedBids = new Set();
+
+/* ---- PIN gate --------------------------------------------------------- */
 
 /* Has the typed name been verified (or does it need no PIN)? A name is gated
    when it has saved brackets carrying a PIN hash that hasn't been unlocked
@@ -31,15 +40,16 @@ function nameUnlocked(nm){
   return !establishedPinHash(nm);   // no PIN on record -> nothing to gate
 }
 
-/* Called when the name field settles. Existing PIN-protected names prompt for
-   the PIN before their bracket is loaded; everything else loads as before. */
+/* Called when the name field settles (or after submissions load). A
+   PIN-protected name that hasn't been unlocked this session prompts for its
+   PIN; everything else just shows its brackets. */
 export function gateName(){
   const nm = getName();
   if(nm && subsForName(nm).length && !nameUnlocked(nm)){
     openUnlockDialog(nm);
     return;
   }
-  refreshChooser();
+  showChooser();
 }
 
 function openUnlockDialog(nm){
@@ -49,9 +59,9 @@ function openUnlockDialog(nm){
     unlockDialog.showModal();
     unlockPinIn.focus();
   } else {
-    // No <dialog> support: fall back to loading (server-side PIN still protects writes).
+    // No <dialog> support: skip the gate (server-side PIN still protects writes).
     state.unlockedNames.add(nm.trim().toLowerCase());
-    refreshChooser();
+    showChooser();
   }
 }
 
@@ -61,10 +71,8 @@ async function confirmUnlock(){
   if(!pin){ unlockPinIn.focus(); showToast("Enter the PIN"); return; }
   const established = establishedPinHash(nm);
 
-  // Hash the PIN. crypto.subtle is only available in a secure context (https or
-  // localhost); on file:// it's missing and would throw. Compute the hash and
-  // ALWAYS close the modal afterward — an open modal <dialog> leaves the rest of
-  // the page inert, which is what makes the chooser <select> stop responding.
+  // crypto.subtle needs a secure context (https / localhost); on file:// it
+  // throws. Either way, close the modal before touching the page.
   let h = "";
   try { h = await pinHashFor(nm, pin); }
   catch(e){
@@ -75,81 +83,105 @@ async function confirmUnlock(){
   if(unlockDialog.open) unlockDialog.close();
 
   if(h !== established){
-    // Wrong PIN: the name belongs to someone else. Clear it and ask for a new one.
+    // Wrong PIN: the name belongs to someone else. Clear it, ask for a new one.
     showToast("That name is taken — wrong PIN. Choose a different name.");
     nameInput.value = "";
     persistName(); saveURL();
     nameInput.focus();
-    refreshChooser();           // hides the chooser bar for the now-empty name
+    showChooser();              // hides the bar for the now-empty name
     return;
   }
   state.unlockedNames.add(nm.trim().toLowerCase());
-  refreshChooser();             // auto-loads the unlocked bracket
+  showChooser();               // unlocked: reveal + auto-load their bracket
 }
 
-/* Rebuild the dropdown for the current name. Hidden when the name has no
-   saved brackets. Call after submissions load or the name changes. */
-export function refreshChooser(){
-  const nm = getName();
-  const list = subsForName(nm)
+/* ---- chooser rendering ------------------------------------------------ */
+
+/* The brackets for the current (unlocked) name, newest first. */
+function myBrackets(){
+  return subsForName(getName())
     .slice()
     .sort((a,b)=> (b.submittedAt||"").localeCompare(a.submittedAt||""));
+}
 
+/* The saved bracket to auto-load when the chooser opens: their official one,
+   else the newest. Returns "" if none. */
+function defaultBid(list){
+  const official = list.find(s => s.official);
+  return official ? official.bid : (list[0] ? list[0].bid : "");
+}
+
+/* Entry point after the name settles / a bracket is chosen. Hides the bar for
+   names with no brackets; otherwise ensures a bracket is loaded and paints the
+   button row, highlighting whichever saved bracket is currently live. */
+export function showChooser(){
+  const nm = getName();
+  if(!nm || !nameUnlocked(nm)){ bar.hidden = true; return; }
+
+  const list = myBrackets();
   if(!list.length){ bar.hidden = true; return; }
   bar.hidden = false;
 
-  // Which option to show selected: the active bracket if it's one of theirs,
-  // else the official one, else the newest.
-  const activeInList = list.some(s => s.bid === state.activeBid);
-  const official = list.find(s => s.official);
-  const selectedBid = activeInList ? state.activeBid
-                    : (official ? official.bid : list[0].bid);
+  // Is the page already showing one of this name's saved brackets, or a
+  // brand-new in-progress bracket the user just started? If so, leave it.
+  const liveIsSaved = list.some(s => s.bid === state.activeBid);
+  const liveIsKnown = liveIsSaved || startedBids.has(state.activeBid);
 
-  // option per bracket (official marked), plus a "new bracket" entry
-  select.innerHTML = list.map(s=>{
-    const tag = s.official ? " — official" : "";
-    const sel = s.bid===selectedBid ? " selected" : "";
-    return `<option value="${esc(s.bid)}"${sel}>${esc(bracketTitle(s))}${tag}</option>`;
-  }).join("") + `<option value="${NEW}">➕ New bracket…</option>`;
-
-  // A <select> fires no `change` event when populated programmatically, so the
-  // option we just marked selected wouldn't load on its own. If that bracket
-  // isn't already the live one — and the name is unlocked — load it now so the
-  // dropdown and the rendered bracket stay in sync. Locked names wait for the
-  // PIN gate (gateName) to admit them first.
-  if(selectedBid && selectedBid !== state.activeBid && nameUnlocked(nm)){
-    const sel = list.find(s => s.bid === selectedBid);
-    if(sel) loadBracketFromSub(sel);
+  // Otherwise auto-load their default (official/newest) bracket. This is the
+  // ONE place a bracket auto-loads — explicit, never a render side effect.
+  if(!liveIsKnown){
+    const sub = list.find(s => s.bid === defaultBid(list));
+    if(sub) loadBracketFromSub(sub);
   }
 
-  syncOfficialToggle(list);
+  // Highlight the active button only when a saved bracket is live (a fresh
+  // "New bracket" has no entry to highlight).
+  const activeBid = list.some(s => s.bid === state.activeBid) ? state.activeBid : "";
+  paintList(list, activeBid);
+  syncOfficialToggle(list, activeBid);
 }
 
-/* Reflect whether the *selected dropdown option* is the official one. */
-function syncOfficialToggle(list){
-  const cur = list.find(s => s.bid === select.value);
+function paintList(list, activeBid){
+  const buttons = list.map(s=>{
+    const active = s.bid === activeBid ? " active" : "";
+    const tag = s.official ? `<span class="bx-tag">official</span>` : "";
+    return `<button type="button" class="bx-btn${active}" data-bid="${esc(s.bid)}">
+      <span class="bx-title">${esc(bracketTitle(s))}</span>${tag}
+    </button>`;
+  }).join("");
+  listEl.innerHTML = buttons +
+    `<button type="button" class="bx-btn bx-new" data-new="1">➕ New bracket</button>`;
+}
+
+/* The "make this official" toggle reflects the ACTIVE bracket. */
+function syncOfficialToggle(list, activeBid){
+  const cur = list.find(s => s.bid === activeBid);
   if(cur){
     makeOffWrap.hidden = false;
     makeOff.checked = !!cur.official;
-    // already-official can't be un-officialed here (pick another to switch)
+    // an already-official bracket can't be un-officialed here
     makeOff.disabled = !!cur.official;
   } else {
-    // "New bracket…" selected: nothing to promote until it's submitted
     makeOffWrap.hidden = true;
     makeOff.checked = false;
   }
 }
 
+/* ---- wiring ----------------------------------------------------------- */
 export function initChooser(){
-  select.addEventListener('change',()=>{
-    const v = select.value;
-    if(v === NEW){ startNewBracket(); refreshChooser(); return; }
-    const s = subsForName(getName()).find(x => x.bid === v);
-    if(s) loadBracketFromSub(s);
-    refreshChooser();
+  // One delegated click handler for the whole button row.
+  listEl.addEventListener('click', e=>{
+    const btn = e.target.closest('.bx-btn');
+    if(!btn) return;
+    if(btn.dataset.new){ startNewBracket(); startedBids.add(state.activeBid); showChooser(); return; }
+    const bid = btn.dataset.bid;
+    if(bid === state.activeBid){ return; }   // already showing it
+    const sub = subsForName(getName()).find(s => s.bid === bid);
+    if(sub) loadBracketFromSub(sub);
+    showChooser();
   });
 
-  // Turning the toggle on re-submits the selected bracket as official (PIN-gated
+  // Turning the toggle on re-submits the active bracket as official (PIN-gated
   // via the submit dialog). It reconciles on the next submissions fetch.
   makeOff.addEventListener('change',()=>{
     if(!makeOff.checked) return;            // only act on turning it ON
@@ -157,8 +189,9 @@ export function initChooser(){
   });
 
   document.getElementById('unlockConfirmBtn').addEventListener('click',()=> confirmUnlock());
-  document.getElementById('unlockCancelBtn').addEventListener('click',()=>{
-    // Cancelled: leave the name in place but don't load anyone's bracket.
-    unlockDialog.close();
+  document.getElementById('unlockCancelBtn').addEventListener('click',()=> unlockDialog.close());
+  // Enter in the PIN field confirms.
+  unlockPinIn.addEventListener('keydown', e=>{
+    if(e.key === "Enter"){ e.preventDefault(); confirmUnlock(); }
   });
 }

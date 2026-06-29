@@ -56,13 +56,12 @@
 
   <!-- inline chooser: shown when the entered name has saved brackets -->
   <div class="chooserbar" id="chooserBar" hidden>
-    <!-- NB: the <select> must NOT be nested inside its <label>. A labelable
-         control inside its label gets the label's forwarded click, which can
-         immediately dismiss the just-opened native dropdown in some browsers
-         ("won't open"). Associate by `for` instead and keep them siblings. -->
+    <!-- Bracket picker: a row of plain buttons (one per saved bracket + "New").
+         Deliberately NOT a native <select> — its OS-drawn popup proved flaky
+         (sometimes wouldn't open), and choosing should be a single click. -->
     <div class="chooser-field">
-      <label class="chooser-lbl" for="bracketSelect">Your brackets</label>
-      <select id="bracketSelect"></select>
+      <span class="chooser-lbl">Your brackets</span>
+      <div class="chooser-list" id="bracketList" role="group" aria-label="Your brackets"></div>
     </div>
     <label class="chooser-official" id="makeOfficialWrap">
       <input type="checkbox" id="makeOfficial">

@@ -9,7 +9,7 @@ import {
 import { render } from "./view.js";
 import { loadSubmissions, loadResults } from "./submissions.js";
 import { initSubmit } from "./submit.js";
-import { initChooser, refreshChooser, gateName } from "./chooser.js";
+import { initChooser, gateName } from "./chooser.js";
 import { loadLeaderboard, initTabs } from "./leaderboard.js";
 
 /* ---- copy share link + reset ---- */
