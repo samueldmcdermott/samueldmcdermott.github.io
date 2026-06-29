@@ -55,7 +55,7 @@ function stampLabel(d){
 /* Submissions already saved under a name (to drive defaults + the PIN check). */
 function mySubs(nm){ return subsForName(nm); }
 /* The PIN hash already established for this name, if any. */
-function establishedPinHash(nm){
+export function establishedPinHash(nm){
   const s = mySubs(nm).find(x => x.pinHash);
   return s ? s.pinHash : "";
 }

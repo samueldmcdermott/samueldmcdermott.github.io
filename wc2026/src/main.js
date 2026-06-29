@@ -9,7 +9,7 @@ import {
 import { render } from "./view.js";
 import { loadSubmissions, loadResults } from "./submissions.js";
 import { initSubmit } from "./submit.js";
-import { initChooser, refreshChooser } from "./chooser.js";
+import { initChooser, refreshChooser, gateName } from "./chooser.js";
 import { loadLeaderboard, initTabs } from "./leaderboard.js";
 
 /* ---- copy share link + reset ---- */
@@ -32,9 +32,9 @@ function initToolbar(){
     saveURL(); render(); showToast("Bracket reset");
   });
 
-  // persist the name as it's typed; refresh the bracket dropdown when it settles
+  // persist the name as it's typed; PIN-gate + refresh the dropdown when it settles
   nameInput.addEventListener('input',()=>{ persistName(); saveURL(); });
-  nameInput.addEventListener('change',()=>{ refreshChooser(); });
+  nameInput.addEventListener('change',()=>{ gateName(); });
 }
 
 /* ---- init ---- */
@@ -46,5 +46,7 @@ initChooser();
 initTabs();
 loadResults();
 loadLeaderboard();
-// Populate the inline bracket dropdown once submissions are loaded.
-loadSubmissions().then(()=>{ refreshChooser(); });
+// Once submissions are loaded, populate the dropdown. If the page opened with a
+// remembered/shared name that's PIN-protected, gateName() prompts for the PIN
+// before loading that name's bracket.
+loadSubmissions().then(()=>{ gateName(); });

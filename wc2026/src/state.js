@@ -16,7 +16,8 @@ export const state = {
   allSubs: [],      // every committed submission (data/submissions.json)
   lbByBid: {},      // bid -> leaderboard entry (for the chooser's score column)
   activeBid: "",    // identity of the bracket currently being edited
-  activeLabel: ""   // its optional label
+  activeLabel: "",  // its optional label
+  unlockedNames: new Set()  // lowercased names whose PIN was verified this session
 };
 
 /* ---- DOM handles used in more than one module ---- */

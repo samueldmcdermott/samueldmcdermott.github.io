@@ -141,6 +141,30 @@
   </form>
 </dialog>
 
+<!-- Unlock dialog: shown when a typed name already has a PIN-protected bracket -->
+<dialog class="dlg" id="unlockDialog">
+  <form method="dialog" class="dlg-card">
+    <div class="dlg-head">
+      <h3>Enter PIN</h3>
+      <button class="dlg-x" value="cancel" aria-label="Close">✕</button>
+    </div>
+    <p class="dlg-note">
+      <b id="unlockNameEcho">This name</b> already has a saved bracket. Enter its
+      PIN to load and edit it.
+    </p>
+    <label class="dlg-field">
+      <span>PIN</span>
+      <input type="password" id="unlockPin" inputmode="numeric" maxlength="20"
+             autocomplete="off" placeholder="••••">
+      <small id="unlockHint">If this isn't your name, the PIN won't match — pick a different name.</small>
+    </label>
+    <div class="dlg-actions">
+      <button class="act ghost" value="cancel" type="button" id="unlockCancelBtn">Cancel</button>
+      <button class="act" value="ok" type="button" id="unlockConfirmBtn">Unlock</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- data.js (classic) publishes window.WC; the app is ES modules from main.js -->
 <script src="src/data.js"></script>
 <script type="module" src="src/main.js"></script>
