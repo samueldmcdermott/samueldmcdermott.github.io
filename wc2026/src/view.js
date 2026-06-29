@@ -3,7 +3,7 @@
    "max points picked" score readout.
    ============================================================ */
 import {
-  state, CODES, R32, TREE, POINTS, ROUND_LABEL, ROUND_MAX, saveURL
+  state, CODES, R32, TREE, POINTS, ROUND_LABEL, ROUND_MAX, saveURL, FROZEN
 } from "./state.js";
 import {
   allMatches, sideTeam, winnerOf, loserOf, eliminatedTeams, propagate
@@ -116,7 +116,8 @@ export function render(){
   </div>`);
 
   bracketEl.innerHTML = cols.join("");
-  attachHandlers();
+  bracketEl.classList.toggle("frozen", FROZEN);
+  if(!FROZEN) attachHandlers();   // frozen: read-only, no click interaction
   updateScore();
 }
 

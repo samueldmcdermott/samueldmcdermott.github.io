@@ -1,8 +1,9 @@
 /* ============================================================
    Leaderboard fetch/render and the Bracket / Leaderboard tabs.
    ============================================================ */
-import { state, getName, esc, fmtUpdated } from "./state.js";
+import { state, getName, esc, fmtUpdated, FROZEN } from "./state.js";
 import { renderOfficial } from "./official.js";
+import { viewBracketByBid } from "./picker.js";
 
 export function renderLeaderboard(data){
   const listEl = document.getElementById('lbList');
@@ -24,7 +25,10 @@ export function renderLeaderboard(data){
     const mine = me && String(e.user||"").toLowerCase()===me ? " mine" : "";
     const final = e.finalPick ? esc(e.finalPick) : "—";
     const max = (e.maxPossible!=null) ? e.maxPossible : "";
-    return `<li class="lb-row${mine}">
+    // frozen: rows are clickable to open that bracket in the Picks tab
+    const clickable = (FROZEN && e.bid) ? " lb-clickable" : "";
+    const bidAttr = e.bid ? ` data-bid="${esc(e.bid)}"` : "";
+    return `<li class="lb-row${mine}${clickable}"${bidAttr}>
       <span class="lb-rank">${i+1}</span>
       <span class="lb-name">${esc(e.user||"—")}</span>
       <span class="lb-final">${final}</span>
@@ -62,7 +66,25 @@ function showView(view){
   if(v === "official") renderOfficial();
 }
 
+/* Switch the active view AND reflect it in the URL hash (so Back works). */
+function gotoView(v){
+  const u = new URL(window.location.href);
+  u.hash = normView(v);
+  history.pushState(null,"",u.toString());
+  showView(v);
+}
+
 export function initTabs(){
+  // Frozen: clicking a leaderboard row opens that bracket in the Picks tab.
+  if(FROZEN){
+    const lbList = document.getElementById('lbList');
+    if(lbList) lbList.addEventListener('click', e=>{
+      const row = e.target.closest('.lb-row[data-bid]');
+      if(!row) return;
+      viewBracketByBid(row.dataset.bid);
+      gotoView("bracket");
+    });
+  }
   document.querySelectorAll('.tab').forEach(t=>{
     t.addEventListener('click',()=>{
       // keep picks/name params; just change the hash

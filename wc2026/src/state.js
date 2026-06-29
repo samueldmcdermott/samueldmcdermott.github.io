@@ -8,6 +8,13 @@
 export const WC = window.WC;
 export const { CODES, R32, TREE, POINTS, ROUND_LABEL, ROUND_MAX } = WC;
 
+/* ============================================================
+   FROZEN — submissions are closed. The bracket becomes a read-only
+   viewer: no editing, no submit, no name/PIN required to browse. The
+   editing UI (name field, submit/reset, chooser, dialogs) is hidden,
+   and slots stop responding to clicks. Flip to false to reopen entry. */
+export const FROZEN = true;
+
 /* ---- mutable app state (shared across modules) ---- */
 export const state = {
   picks: {},        // picks[matchId] = "a" | "b" (which side the user advanced)

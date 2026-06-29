@@ -4,13 +4,14 @@
    the page together and kicks off the initial render + fetches.
    ============================================================ */
 import {
-  state, nameInput, persistName, saveURL, showToast, loadURL
+  state, nameInput, persistName, saveURL, showToast, loadURL, FROZEN
 } from "./state.js";
 import { render } from "./view.js";
 import { loadSubmissions, loadResults } from "./submissions.js";
 import { initSubmit } from "./submit.js";
 import { initChooser, gateName } from "./chooser.js";
 import { loadLeaderboard, initTabs } from "./leaderboard.js";
+import { initPicker, showPicker, viewBracketByBid } from "./picker.js";
 
 /* ---- copy share link + reset ---- */
 function fallbackCopy(text){
@@ -40,13 +41,43 @@ function initToolbar(){
 /* ---- init ---- */
 loadURL();
 render();
-initToolbar();
-initSubmit();
-initChooser();
 initTabs();
 loadResults();
 loadLeaderboard();
-// Once submissions are loaded, populate the dropdown. If the page opened with a
-// remembered/shared name that's PIN-protected, gateName() prompts for the PIN
-// before loading that name's bracket.
-loadSubmissions().then(()=>{ gateName(); });
+
+if(FROZEN){
+  // Submissions are closed: hide all editing UI and run the read-only picker.
+  document.querySelectorAll('[data-edit-only]').forEach(el => el.hidden = true);
+  document.body.classList.add('frozen');
+  initPicker();
+  // Once submissions + leaderboard land, fill the picker and open a default
+  // bracket (the one shared via ?bid=, else the top official entry).
+  loadSubmissions().then(()=>{
+    showPicker();
+    const wanted = state.activeBid && state.allSubs.some(s => s.bid === state.activeBid)
+      ? state.activeBid
+      : defaultViewBid();
+    if(wanted) viewBracketByBid(wanted);
+  });
+} else {
+  // Live entry mode.
+  initToolbar();
+  initSubmit();
+  initChooser();
+  // Once submissions are loaded, populate the dropdown. If the page opened with
+  // a remembered/shared name that's PIN-protected, gateName() prompts for the
+  // PIN before loading that name's bracket.
+  loadSubmissions().then(()=>{ gateName(); });
+}
+
+/* The bracket to open by default in frozen mode: highest-scoring official one. */
+function defaultViewBid(){
+  const officials = state.allSubs.filter(s => s.official);
+  if(!officials.length) return "";
+  officials.sort((a,b)=>{
+    const sa = state.lbByBid[a.bid]?.score ?? 0;
+    const sb = state.lbByBid[b.bid]?.score ?? 0;
+    return sb - sa;
+  });
+  return officials[0].bid;
+}
