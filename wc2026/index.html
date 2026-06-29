@@ -56,10 +56,14 @@
 
   <!-- inline chooser: shown when the entered name has saved brackets -->
   <div class="chooserbar" id="chooserBar" hidden>
-    <label class="chooser-field">
-      <span class="chooser-lbl">Your brackets</span>
+    <!-- NB: the <select> must NOT be nested inside its <label>. A labelable
+         control inside its label gets the label's forwarded click, which can
+         immediately dismiss the just-opened native dropdown in some browsers
+         ("won't open"). Associate by `for` instead and keep them siblings. -->
+    <div class="chooser-field">
+      <label class="chooser-lbl" for="bracketSelect">Your brackets</label>
       <select id="bracketSelect"></select>
-    </label>
+    </div>
     <label class="chooser-official" id="makeOfficialWrap">
       <input type="checkbox" id="makeOfficial">
       <span>Make this my official entry</span>
