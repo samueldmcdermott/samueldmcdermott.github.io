@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-29T12:20:33Z",
+  "updatedAt": "2026-06-29T12:33:03Z",
   "resultsCount": 1,
   "thirdDecided": false,
   "entries": [
@@ -52,6 +52,16 @@
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:48:15.954Z"
+    },
+    {
+      "user": "Karen",
+      "bid": "mqz6u51i1ro9",
+      "score": 1,
+      "correct": 1,
+      "maxPossible": 80,
+      "finalPick": "NED beats CIV",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T12:32:53.982Z"
     }
   ]
 }
