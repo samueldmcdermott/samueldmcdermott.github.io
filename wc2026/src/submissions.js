@@ -7,6 +7,7 @@ import {
   state, newBid, setActive, saveURL, decodePicksInto, showToast, fmtWhen
 } from "./state.js";
 import { render } from "./view.js";
+import { renderOfficial } from "./official.js";
 
 /* Submissions saved under a given name (case-insensitive). */
 export function subsForName(nm){
@@ -58,7 +59,8 @@ export function loadResults(){
       state.results = {};
       const w = (data && data.winners) || {};
       Object.keys(w).forEach(id=>{ if(w[id]==="a"||w[id]==="b") state.results[id]=w[id]; });
-      render();   // re-render now that results are known
+      render();          // re-render the personal bracket now that results are known
+      renderOfficial();  // …and the common official bracket
     })
     .catch(()=>{ /* no results yet — bracket renders normally */ });
 }

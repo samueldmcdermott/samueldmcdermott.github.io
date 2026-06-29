@@ -2,6 +2,7 @@
    Leaderboard fetch/render and the Bracket / Leaderboard tabs.
    ============================================================ */
 import { state, getName, esc, fmtUpdated } from "./state.js";
+import { renderOfficial } from "./official.js";
 
 export function renderLeaderboard(data){
   const listEl = document.getElementById('lbList');
@@ -44,31 +45,35 @@ export function loadLeaderboard(){
    TABS — "Your Bracket" (landing) and "Leaderboard", with the
    active view reflected in the URL hash so Back/links work.
    ============================================================ */
+const VIEWS = ["bracket", "official", "leaderboard"];
+function normView(v){ return VIEWS.includes(v) ? v : "bracket"; }
+
 function showView(view){
-  const isLb = view === "leaderboard";
-  document.body.classList.toggle("show-leaderboard", isLb);
-  document.body.classList.toggle("show-bracket", !isLb);
+  const v = normView(view);
+  document.body.classList.toggle("show-bracket", v === "bracket");
+  document.body.classList.toggle("show-official", v === "official");
+  document.body.classList.toggle("show-leaderboard", v === "leaderboard");
   document.querySelectorAll('.tab').forEach(t=>{
-    const on = t.dataset.view === (isLb ? "leaderboard" : "bracket");
+    const on = t.dataset.view === v;
     t.classList.toggle('active', on);
     t.setAttribute('aria-selected', on);
   });
-  if(isLb) loadLeaderboard();
+  if(v === "leaderboard") loadLeaderboard();
+  if(v === "official") renderOfficial();
 }
 
 export function initTabs(){
   document.querySelectorAll('.tab').forEach(t=>{
     t.addEventListener('click',()=>{
-      const v = t.dataset.view;
       // keep picks/name params; just change the hash
       const u = new URL(window.location.href);
-      u.hash = v === "leaderboard" ? "leaderboard" : "bracket";
+      u.hash = normView(t.dataset.view);
       history.pushState(null,"",u.toString());
-      showView(v);
+      showView(t.dataset.view);
     });
   });
   window.addEventListener('hashchange',()=>{
-    showView(location.hash.replace('#','') || "bracket");
+    showView(location.hash.replace('#',''));
   });
-  showView(location.hash.replace('#','') || "bracket");
+  showView(location.hash.replace('#',''));
 }

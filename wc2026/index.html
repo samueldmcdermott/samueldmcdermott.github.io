@@ -32,6 +32,7 @@
 
 <nav class="tabs" role="tablist" aria-label="Views">
   <button class="tab active" data-view="bracket" role="tab" aria-selected="true">Your bracket</button>
+  <button class="tab" data-view="official" role="tab" aria-selected="false">Official bracket</button>
   <button class="tab" data-view="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
 </nav>
 
@@ -74,6 +75,19 @@
   </div>
 </div>
 
+<div class="view view-official" id="viewOfficial">
+  <div class="official-head">
+    <h2>Official <span class="acc">bracket</span></h2>
+    <p class="official-note">
+      The live knockout bracket as results are confirmed. Advanced teams carry
+      forward automatically; matchups still TBD show their projected slots.
+    </p>
+  </div>
+  <div class="scroll">
+    <div class="bracket" id="officialBracket"></div>
+  </div>
+</div>
+
 <section class="view view-leaderboard leaderboard" id="leaderboard">
   <div class="lb-head">
     <h2>Leaderboard</h2>
@@ -101,8 +115,9 @@
     <span><span class="dot" style="background:var(--win)"></span> Advanced</span>
     <span><span class="dot" style="background:var(--amber)"></span> Champion / winner marker</span>
     <span><span class="dot" style="background:var(--card)"></span> Undecided</span>
+    <span><span class="dot" style="background:#5ec486"></span> ✓ Pick was right</span>
     <span><span class="dot" style="background:#e26d6d"></span> ✕ Pick was wrong</span>
-    <span><span class="dot" style="background:#7a83bc"></span> ✕ Eliminated upstream</span>
+    <span><span class="dot" style="background:rgba(226,109,109,.5)"></span> ✕ Eliminated upstream</span>
   </div>
   <p class="credit">Bracket structure per FIFA's published Round-of-32 paths. Matchups reflect group-stage projections as of June 2026 and update as results are confirmed. Built as a static site — no tracking, no backend.</p>
 </footer>

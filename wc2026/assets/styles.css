@@ -90,9 +90,13 @@ h1 .acc{color:var(--gold);}
 }
 .tab:focus-visible{outline:2px solid var(--vermilion);outline-offset:-2px;}
 
-/* ---------- View toggling (driven by body class) ---------- */
-.view-leaderboard{display:none;}
+/* ---------- View toggling (driven by body class) ----------
+   Three mutually exclusive views: bracket (default), official,
+   leaderboard. Hide all, then reveal the one matching the body class. */
+.view-official,.view-leaderboard{display:none;}
+body.show-official .view-bracket,
 body.show-leaderboard .view-bracket{display:none;}
+body.show-official .view-official{display:block;}
 body.show-leaderboard .view-leaderboard{display:block;}
 
 /* ---------- Sticky scorebar ---------- */
@@ -229,6 +233,10 @@ button.act:focus-visible,
 .slot .code,.slot .nm,.slot .seedtag,.slot .xmark{position:relative;z-index:1;}
 .slot.placeholder{color:var(--chalk-dim);font-style:normal;cursor:default;font-weight:500;}
 .slot.placeholder:hover{background:transparent;}
+/* read-only slots on the official bracket — no pointer affordance */
+.slot.static{cursor:default;}
+.slot.static:hover{background:transparent;}
+.slot.static.win:hover{background:var(--win);}
 /* three-letter country-code badge (replaces emoji flags) */
 .code{
   font-family:'IBM Plex Mono',monospace;font-weight:600;
@@ -255,15 +263,25 @@ button.act:focus-visible,
 }
 .slot.dead .nm{text-decoration:line-through;text-decoration-thickness:1.5px;}
 .slot.dead.win::after{display:none;}            /* drop the amber dot on busted picks */
-/* a pick proven wrong by the result */
-.slot.wrong{background:rgba(193,87,87,.20);color:#e7c7c7;}
-.slot.wrong .xmark{color:#e26d6d;}
-.slot.wrong .code{color:#e7c7c7;background:rgba(226,109,109,.14);border-color:rgba(226,109,109,.3);}
-/* a pick whose team was eliminated upstream (can no longer be here) */
-.slot.eliminated{background:rgba(122,131,188,.10);color:var(--chalk-dim);}
-.slot.eliminated .xmark{color:var(--chalk-dim);}
-.slot.eliminated .code{opacity:.7;}
 .slot.dead .code-bg{opacity:.06;}
+
+/* a pick CONFIRMED CORRECT by the result — low-opacity green, ✓ */
+.slot.correct{background:rgba(94,196,134,.18);color:#cfeede;}
+.slot.correct .xmark{color:#5ec486;margin-left:auto;}
+.slot.correct .code{color:#cfeede;background:rgba(94,196,134,.14);border-color:rgba(94,196,134,.34);}
+.slot.correct.win::after{background:#5ec486;box-shadow:0 0 0 3px rgba(94,196,134,.22);}
+.slot.correct .seedtag{color:#a9d8bf;}
+
+/* a pick proven WRONG by the result — low-opacity red, ✕ */
+.slot.wrong{background:rgba(226,109,109,.20);color:#e7c7c7;}
+.slot.wrong .xmark{color:#e26d6d;margin-left:auto;}
+.slot.wrong .code{color:#e7c7c7;background:rgba(226,109,109,.14);border-color:rgba(226,109,109,.3);}
+/* a pick whose team was eliminated upstream — the propagated-impossible
+   outcome, also low-opacity red so busted future rounds read as one story */
+.slot.eliminated{background:rgba(226,109,109,.10);color:#d9b3b3;}
+.slot.eliminated .xmark{color:rgba(226,109,109,.7);margin-left:auto;}
+.slot.eliminated .code{color:#d9b3b3;opacity:.85;background:rgba(226,109,109,.08);border-color:rgba(226,109,109,.22);}
+.slot.eliminated .seedtag{color:rgba(217,179,179,.7);}
 
 /* champion + third place */
 .champ-wrap{
@@ -302,6 +320,19 @@ button.act:focus-visible,
   box-shadow:0 8px 30px rgba(0,0,0,.4);
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ---------- Official bracket header ---------- */
+.official-head{padding:24px 26px 0;}
+.official-head h2{
+  font-family:'Archivo',sans-serif;font-weight:900;font-size:22px;
+  text-transform:uppercase;letter-spacing:-.01em;margin:0;
+}
+.official-head h2 .acc{color:var(--gold);}
+.official-head .official-note{
+  font-family:'Archivo Narrow',sans-serif;color:var(--chalk-dim);
+  font-size:13px;line-height:1.5;margin:6px 0 0;max-width:620px;
+}
+.view-official .scroll{padding-top:18px;}
 
 /* ---------- Leaderboard ---------- */
 .leaderboard{
@@ -467,6 +498,7 @@ footer b{color:var(--chalk);font-weight:600;}
   .name-field input{width:100%;}
   .name-field{flex:1;}
   .leaderboard{padding:20px 16px 8px;}
+  .official-head{padding:18px 16px 0;}
 }
 
 @media (prefers-reduced-motion: reduce){

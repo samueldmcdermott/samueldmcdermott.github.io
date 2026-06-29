@@ -16,13 +16,14 @@ const bracketEl = document.getElementById('bracket');
 function codeFor(team){ return CODES[team.name] || "TBD"; }
 
 /* status of a picked side, given official results:
+     'correct'    -> this pick won its own match per the official result
      'wrong'      -> this pick lost its own match per the official result
      'eliminated' -> the advanced team lost earlier (can no longer be here)
      ''           -> fine / undecided */
 function pickStatus(team, matchId, isWin){
   if(!isWin || !team || team.tbd) return "";
   const r = state.results[matchId];
-  if(r && r !== state.picks[matchId]) return "wrong";
+  if(r) return r === state.picks[matchId] ? "correct" : "wrong";
   if(state.deadSet.has(team.name)) return "eliminated";
   return "";
 }
@@ -32,14 +33,17 @@ function slotHTML(team, matchId, side, isWin){
     return `<button class="slot placeholder" data-noclick="1">
       <span class="code">—</span><span class="nm">Awaiting result</span></button>`;
   }
-  const status = pickStatus(team, matchId, isWin);   // '', 'wrong', 'eliminated'
+  const status = pickStatus(team, matchId, isWin);   // '', 'correct', 'wrong', 'eliminated'
   let cls = "slot";
   if(isWin) cls += " win";
   if(team.tbd) cls += " projected";   // name known but slot not yet locked
-  if(status) cls += " dead " + status;
+  // 'correct' is a live, still-standing pick; 'wrong'/'eliminated' are busted
+  if(status==="correct") cls += " correct";
+  else if(status) cls += " dead " + status;
   // low-opacity code watermark shown only once this side has been picked
   const watermark = isWin ? `<span class="code-bg" aria-hidden="true">${codeFor(team)}</span>` : "";
-  const xmark = status ? `<span class="xmark" aria-hidden="true">✕</span>` : "";
+  const mark = status==="correct" ? "✓" : "✕";
+  const xmark = status ? `<span class="xmark" aria-hidden="true">${mark}</span>` : "";
   return `<button class="${cls}" data-match="${matchId}" data-side="${side}">
       ${watermark}
       <span class="code">${codeFor(team)}</span>
