@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-29T13:03:55Z",
+  "updatedAt": "2026-06-29T18:31:24Z",
   "resultsCount": 1,
   "thirdDecided": false,
   "entries": [
@@ -62,6 +62,16 @@
       "finalPick": "NED beats CIV",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T12:32:53.982Z"
+    },
+    {
+      "user": "Ted!",
+      "bid": "mqzk0bfe71fi",
+      "score": 1,
+      "correct": 1,
+      "maxPossible": 80,
+      "finalPick": "MEX beats NED",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T18:31:14.140Z"
     }
   ]
 }
