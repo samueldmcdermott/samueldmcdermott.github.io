@@ -3,3 +3,13 @@ description: [Research in artificial intelligence and machine learning]
 logo: self-oct-22.jpg
 
 theme: jekyll-theme-minimal
+
+# Keep maintenance/build machinery out of the *published* site. These still
+# live in the (public) repo; this only stops them being served as URLs.
+# NB: do NOT exclude wc2026/data/ or wc2026/leaderboard.json — the bracket app
+# fetches those at runtime in the browser.
+exclude:
+  - scripts/
+  - google-apps-script/
+  - SETUP.md
+  - wc2026/README.md
