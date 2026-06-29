@@ -1,0 +1,66 @@
+name: Fetch match results
+
+# Stage 2: MANUALLY triggered (no cron). Asks the results source for finished
+# matches, writes any new outcomes into wc2026/data/results.json, then re-scores
+# and commits both files in one go.
+#
+# Why score here instead of letting leaderboard.yml react to the results.json
+# push: commits made with the default GITHUB_TOKEN do NOT trigger other
+# workflows, so this job runs scripts/score_bracket.py itself.
+#
+# NOTE: the data source in scripts/fetch_results.py is still a stub, so today a
+# run is a safe no-op until fetch_finished_results() is implemented (and any API
+# key is added as a repo secret + wired into the env below).
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Apply results (off = dry run, just log what would change)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leaderboard          # share the leaderboard lock so pushes don't race
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Fetch results
+        # env:
+        #   FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}   # wire when source is implemented
+        run: |
+          if [ "${{ inputs.write }}" = "true" ]; then
+            python scripts/fetch_results.py --write
+          else
+            python scripts/fetch_results.py
+          fi
+
+      - name: Re-score leaderboard
+        if: ${{ inputs.write }}
+        run: python scripts/score_bracket.py
+
+      - name: Commit results + leaderboard
+        if: ${{ inputs.write }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add wc2026/data/results.json wc2026/leaderboard.json
+          if git diff --cached --quiet; then
+            echo "No result changes to commit."
+          else
+            git commit -m "chore: update results + leaderboard [skip ci]"
+            git push origin HEAD:${{ github.event.repository.default_branch }}
+          fi
