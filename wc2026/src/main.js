@@ -46,8 +46,8 @@ loadResults();
 loadLeaderboard();
 
 if(FROZEN){
-  // Submissions are closed: hide all editing UI and run the read-only picker.
-  document.querySelectorAll('[data-edit-only]').forEach(el => el.hidden = true);
+  // Submissions are closed: hide all editing UI (CSS handles it via body.frozen,
+  // which beats the .scorebar/.chooserbar display rules) and run the picker.
   document.body.classList.add('frozen');
   initPicker();
   // Once submissions + leaderboard land, fill the picker and open a default

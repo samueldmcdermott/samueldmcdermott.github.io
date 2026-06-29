@@ -50,7 +50,9 @@ export function loadLeaderboard(){
    active view reflected in the URL hash so Back/links work.
    ============================================================ */
 const VIEWS = ["bracket", "official", "leaderboard"];
-function normView(v){ return VIEWS.includes(v) ? v : "bracket"; }
+// Default landing tab: Results (official) while frozen, else Picks (bracket).
+const DEFAULT_VIEW = FROZEN ? "official" : "bracket";
+function normView(v){ return VIEWS.includes(v) ? v : DEFAULT_VIEW; }
 
 function showView(view){
   const v = normView(view);

@@ -99,6 +99,12 @@ body.show-leaderboard .view-bracket{display:none;}
 body.show-official .view-official{display:block;}
 body.show-leaderboard .view-leaderboard{display:block;}
 
+/* Frozen (submissions closed): hide every editing-only control. This rule's
+   specificity (0,2,0) beats .scorebar/.chooserbar{display:flex} (0,1,0), so the
+   bare [hidden] attribute (which display:flex would otherwise override) isn't
+   relied on. */
+body.frozen [data-edit-only]{display:none !important;}
+
 /* ---------- Sticky scorebar ---------- */
 .scorebar{
   position:sticky;top:0;z-index:30;
