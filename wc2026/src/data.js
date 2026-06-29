@@ -16,10 +16,10 @@
 const CODES = {
   "South Africa":"RSA","Canada":"CAN","Brazil":"BRA","Japan":"JPN","Germany":"GER",
   "Paraguay":"PAR","Netherlands":"NED","Morocco":"MAR","Ivory Coast":"CIV","Norway":"NOR",
-  "France":"FRA","Sweden":"SWE","Mexico":"MEX","Scotland":"SCO","England":"ENG",
-  "Cabo Verde":"CPV","Egypt":"EGY","Czechia":"CZE","United States":"USA","Bosnia and Herzegovina":"BIH",
+  "France":"FRA","Sweden":"SWE","Mexico":"MEX","Ecuador":"ECU","England":"ENG",
+  "Cabo Verde":"CPV","Egypt":"EGY","DR Congo":"COD","United States":"USA","Bosnia and Herzegovina":"BIH",
   "Spain":"ESP","Austria":"AUT","Switzerland":"SUI","Belgium":"BEL","Portugal":"POR",
-  "Ghana":"GHA","Australia":"AUS","Iran":"IRN","Argentina":"ARG","Uruguay":"URU",
+  "Ghana":"GHA","Australia":"AUS","Senegal":"SEN","Argentina":"ARG","Algeria":"ALG",
   "Colombia":"COL","Croatia":"CRO"
 };
 
@@ -33,22 +33,22 @@ function P(name, seed){ return {name, seed, tbd:true}; }
    feeders. Reorder here (not the logic) if the tree ever changes.
    Each match: { id, a, b } */
 const R32 = [
-  {id:74, a:T("Germany","1E"),       b:T("Paraguay","3rd D")},
-  {id:77, a:P("France","1I"),        b:P("Sweden","3rd C/D/F/G/H")},
+  {id:74, a:T("Germany","1E"),       b:T("Paraguay","3D")},
+  {id:77, a:T("France","1I"),        b:T("Sweden","3F")},
   {id:73, a:T("South Africa","2A"),  b:T("Canada","2B")},
   {id:75, a:T("Netherlands","1F"),   b:T("Morocco","2C")},
-  {id:83, a:P("Portugal","2K"),      b:P("Ghana","2L")},
-  {id:84, a:P("Spain","1H"),         b:P("Austria","2J")},
-  {id:81, a:T("United States","1D"), b:T("Bosnia and Herzegovina","3rd B")},
-  {id:82, a:P("Egypt","1G"),         b:P("Czechia","3rd A/E/H/I/J")},
+  {id:83, a:T("Portugal","2K"),      b:T("Croatia","2L")},
+  {id:84, a:T("Spain","1H"),         b:T("Austria","2J")},
+  {id:81, a:T("United States","1D"), b:T("Bosnia and Herzegovina","3B")},
+  {id:82, a:T("Belgium","1G"),       b:T("Senegal","3I")},
   {id:76, a:T("Brazil","1C"),        b:T("Japan","2F")},
   {id:78, a:T("Ivory Coast","2E"),   b:T("Norway","2I")},
-  {id:79, a:T("Mexico","1A"),        b:P("Scotland","3rd C/E/F/H/I")},
-  {id:80, a:P("England","1L"),       b:P("Cabo Verde","3rd E/H/I/J/K")},
-  {id:86, a:T("Argentina","1J"),     b:T("Uruguay","2H")},
-  {id:88, a:T("Australia","2D"),     b:T("Iran","2G")},
-  {id:85, a:P("Switzerland","1B"),   b:P("Belgium","3rd E/F/G/I/J")},
-  {id:87, a:P("Colombia","1K"),      b:P("Croatia","3rd D/E/I/J/L")}
+  {id:79, a:T("Mexico","1A"),        b:T("Ecuador","3E")},
+  {id:80, a:T("England","1L"),       b:T("DR Congo","3K")},
+  {id:86, a:T("Argentina","1J"),     b:T("Cabo Verde","2H")},
+  {id:88, a:T("Australia","2D"),     b:T("Egypt","2G")},
+  {id:85, a:T("Switzerland","1B"),   b:T("Algeria","3J")},
+  {id:87, a:T("Colombia","1K"),      b:T("Ghana","3L")}
 ];
 
 /* Fixed bracket tree (FIFA published Round-of-32 paths).
