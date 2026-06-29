@@ -1,18 +1,8 @@
 {
-  "updatedAt": "2026-06-29T12:33:03Z",
+  "updatedAt": "2026-06-29T13:03:55Z",
   "resultsCount": 1,
   "thirdDecided": false,
   "entries": [
-    {
-      "user": "M",
-      "bid": "mqy84hkagzdz",
-      "score": 1,
-      "correct": 1,
-      "maxPossible": 80,
-      "finalPick": "NED beats JPN",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-28T20:11:38.938Z"
-    },
     {
       "user": "Sam",
       "bid": "mqykcjzr9z3d",
@@ -52,6 +42,16 @@
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:48:15.954Z"
+    },
+    {
+      "user": "M",
+      "bid": "mqz6o60d41tv",
+      "score": 1,
+      "correct": 1,
+      "maxPossible": 80,
+      "finalPick": "NED beats JPN",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T12:20:23.421Z"
     },
     {
       "user": "Karen",
