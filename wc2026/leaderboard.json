@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-29T01:53:10Z",
+  "updatedAt": "2026-06-29T01:57:14Z",
   "resultsCount": 1,
   "thirdDecided": false,
   "entries": [
@@ -14,16 +14,6 @@
       "submittedAt": "2026-06-28T20:11:38.938Z"
     },
     {
-      "user": "Harvey",
-      "bid": "mqyh5otw1y1g",
-      "score": 1,
-      "correct": 1,
-      "maxPossible": 80,
-      "finalPick": "FRA beats NOR",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T00:23:39.770Z"
-    },
-    {
       "user": "Sam",
       "bid": "mqykcjzr9z3d",
       "score": 1,
@@ -32,6 +22,16 @@
       "finalPick": "BRA beats ESP",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:52:58.936Z"
+    },
+    {
+      "user": "Harvey",
+      "bid": "mqyh5otw1y1g",
+      "score": 1,
+      "correct": 1,
+      "maxPossible": 80,
+      "finalPick": "FRA beats NOR",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T01:57:03.854Z"
     }
   ]
 }
