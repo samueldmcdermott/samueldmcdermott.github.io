@@ -60,10 +60,22 @@ async function confirmUnlock(){
   const pin = (unlockPinIn.value || "").trim();
   if(!pin){ unlockPinIn.focus(); showToast("Enter the PIN"); return; }
   const established = establishedPinHash(nm);
-  const h = await pinHashFor(nm, pin);
+
+  // Hash the PIN. crypto.subtle is only available in a secure context (https or
+  // localhost); on file:// it's missing and would throw. Compute the hash and
+  // ALWAYS close the modal afterward — an open modal <dialog> leaves the rest of
+  // the page inert, which is what makes the chooser <select> stop responding.
+  let h = "";
+  try { h = await pinHashFor(nm, pin); }
+  catch(e){
+    if(unlockDialog.open) unlockDialog.close();
+    showToast("Can't verify the PIN here (needs https/localhost).");
+    return;
+  }
+  if(unlockDialog.open) unlockDialog.close();
+
   if(h !== established){
     // Wrong PIN: the name belongs to someone else. Clear it and ask for a new one.
-    unlockDialog.close();
     showToast("That name is taken — wrong PIN. Choose a different name.");
     nameInput.value = "";
     persistName(); saveURL();
@@ -72,7 +84,6 @@ async function confirmUnlock(){
     return;
   }
   state.unlockedNames.add(nm.trim().toLowerCase());
-  unlockDialog.close();
   refreshChooser();             // auto-loads the unlocked bracket
 }
 
