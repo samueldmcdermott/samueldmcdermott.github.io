@@ -1,7 +1,7 @@
 {
-  "_comment": "OFFICIAL RESULTS — edit by hand as games finish. For each match, set the value to the side that WON: \"a\" = top team in that match, \"b\" = bottom team (the same a/b sides shown on the bracket page). Leave null until the match is played. Match ids are grouped by round below. Match 103 is the THIRD-PLACE game: it is not worth points, but its result breaks ties on the leaderboard (whoever predicted it correctly ranks higher). On commit, the leaderboard workflow re-scores everyone and updates wc2026/leaderboard.json with a fresh timestamp.",
+  "_comment": "OFFICIAL RESULTS \u2014 edit by hand as games finish. For each match, set the value to the side that WON: \"a\" = top team in that match, \"b\" = bottom team (the same a/b sides shown on the bracket page). Leave null until the match is played. Match ids are grouped by round below. Match 103 is the THIRD-PLACE game: it is not worth points, but its result breaks ties on the leaderboard (whoever predicted it correctly ranks higher). On commit, the leaderboard workflow re-scores everyone and updates wc2026/leaderboard.json with a fresh timestamp.",
   "winners": {
-    "74": null,
+    "74": "b",
     "77": null,
     "73": "b",
     "75": null,
@@ -17,7 +17,6 @@
     "88": null,
     "85": null,
     "87": null,
-
     "89": null,
     "90": null,
     "93": null,
@@ -26,17 +25,13 @@
     "92": null,
     "95": null,
     "96": null,
-
     "97": null,
     "98": null,
     "99": null,
     "100": null,
-
     "101": null,
     "102": null,
-
     "104": null,
-
     "103": null
   }
 }
