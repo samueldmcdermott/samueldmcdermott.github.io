@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-06-29T19:22:31Z",
-  "resultsCount": 2,
+  "updatedAt": "2026-06-30T00:24:52Z",
+  "resultsCount": 3,
   "thirdDecided": false,
   "entries": [
     {
@@ -8,7 +8,7 @@
       "bid": "mqykcjzr9z3d",
       "score": 2,
       "correct": 2,
-      "maxPossible": 80,
+      "maxPossible": 73,
       "finalPick": "BRA beats ESP",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:52:58.936Z"
@@ -18,17 +18,27 @@
       "bid": "mqyh5otw1y1g",
       "score": 2,
       "correct": 2,
-      "maxPossible": 80,
+      "maxPossible": 79,
       "finalPick": "FRA beats NOR",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:57:03.854Z"
+    },
+    {
+      "user": "Deirdre",
+      "bid": "mqz3gxmxcq9c",
+      "score": 2,
+      "correct": 2,
+      "maxPossible": 79,
+      "finalPick": "FRA beats ARG",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T10:48:15.954Z"
     },
     {
       "user": "Karen",
       "bid": "mqz6u51i1ro9",
       "score": 2,
       "correct": 2,
-      "maxPossible": 80,
+      "maxPossible": 79,
       "finalPick": "NED beats CIV",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T12:32:53.982Z"
@@ -38,7 +48,7 @@
       "bid": "mqzk0bfe71fi",
       "score": 2,
       "correct": 2,
-      "maxPossible": 80,
+      "maxPossible": 79,
       "finalPick": "MEX beats NED",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T18:32:43.263Z"
@@ -48,27 +58,17 @@
       "bid": "mqz351y18631",
       "score": 1,
       "correct": 1,
-      "maxPossible": 77,
+      "maxPossible": 76,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:40:00.069Z"
-    },
-    {
-      "user": "Deirdre",
-      "bid": "mqz3gxmxcq9c",
-      "score": 1,
-      "correct": 1,
-      "maxPossible": 79,
-      "finalPick": "FRA beats ARG",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T10:48:15.954Z"
     },
     {
       "user": "M",
       "bid": "mqz6o60d41tv",
       "score": 1,
       "correct": 1,
-      "maxPossible": 65,
+      "maxPossible": 64,
       "finalPick": "NED beats JPN",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T12:20:23.421Z"
