@@ -2,7 +2,7 @@
   "_comment": "OFFICIAL RESULTS \u2014 edit by hand as games finish. For each match, set the value to the side that WON: \"a\" = top team in that match, \"b\" = bottom team (the same a/b sides shown on the bracket page). Leave null until the match is played. Match ids are grouped by round below. Match 103 is the THIRD-PLACE game: it is not worth points, but its result breaks ties on the leaderboard (whoever predicted it correctly ranks higher). On commit, the leaderboard workflow re-scores everyone and updates wc2026/leaderboard.json with a fresh timestamp.",
   "winners": {
     "74": "b",
-    "77": null,
+    "77": "a",
     "73": "b",
     "75": "b",
     "83": null,
