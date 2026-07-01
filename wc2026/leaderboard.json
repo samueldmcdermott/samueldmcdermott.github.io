@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-07-01T00:17:21Z",
-  "resultsCount": 6,
+  "updatedAt": "2026-07-01T04:41:44Z",
+  "resultsCount": 7,
   "thirdDecided": false,
   "entries": [
     {
       "user": "Deirdre",
       "bid": "mqz3gxmxcq9c",
-      "score": 5,
-      "correct": 5,
+      "score": 6,
+      "correct": 6,
       "maxPossible": 79,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
@@ -16,8 +16,8 @@
     {
       "user": "Sam",
       "bid": "mqykcjzr9z3d",
-      "score": 4,
-      "correct": 4,
+      "score": 5,
+      "correct": 5,
       "maxPossible": 70,
       "finalPick": "BRA beats ESP",
       "thirdCorrect": 0,
@@ -26,8 +26,8 @@
     {
       "user": "Harvey",
       "bid": "mqyh5otw1y1g",
-      "score": 4,
-      "correct": 4,
+      "score": 5,
+      "correct": 5,
       "maxPossible": 76,
       "finalPick": "FRA beats NOR",
       "thirdCorrect": 0,
@@ -36,8 +36,8 @@
     {
       "user": "Nick",
       "bid": "mqz351y18631",
-      "score": 4,
-      "correct": 4,
+      "score": 5,
+      "correct": 5,
       "maxPossible": 76,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
@@ -46,8 +46,8 @@
     {
       "user": "Karen",
       "bid": "mqz6u51i1ro9",
-      "score": 3,
-      "correct": 3,
+      "score": 4,
+      "correct": 4,
       "maxPossible": 33,
       "finalPick": "NED beats CIV",
       "thirdCorrect": 0,
@@ -56,8 +56,8 @@
     {
       "user": "Ted!",
       "bid": "mqzk0bfe71fi",
-      "score": 3,
-      "correct": 3,
+      "score": 4,
+      "correct": 4,
       "maxPossible": 61,
       "finalPick": "MEX beats NED",
       "thirdCorrect": 0,
@@ -66,8 +66,8 @@
     {
       "user": "M",
       "bid": "mqz6o60d41tv",
-      "score": 2,
-      "correct": 2,
+      "score": 3,
+      "correct": 3,
       "maxPossible": 32,
       "finalPick": "NED beats JPN",
       "thirdCorrect": 0,
