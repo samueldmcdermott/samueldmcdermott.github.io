@@ -1,74 +1,74 @@
 {
-  "updatedAt": "2026-07-02T03:40:00Z",
-  "resultsCount": 10,
+  "updatedAt": "2026-07-03T04:55:07Z",
+  "resultsCount": 13,
   "thirdDecided": false,
   "entries": [
     {
-      "user": "Deirdre",
-      "bid": "mqz3gxmxcq9c",
-      "score": 9,
-      "correct": 9,
-      "maxPossible": 79,
-      "finalPick": "FRA beats ARG",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T10:48:15.954Z"
-    },
-    {
       "user": "Sam",
       "bid": "mqykcjzr9z3d",
-      "score": 8,
-      "correct": 8,
+      "score": 11,
+      "correct": 11,
       "maxPossible": 70,
       "finalPick": "BRA beats ESP",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:52:58.936Z"
     },
     {
-      "user": "Harvey",
-      "bid": "mqyh5otw1y1g",
-      "score": 7,
-      "correct": 7,
-      "maxPossible": 75,
-      "finalPick": "FRA beats NOR",
+      "user": "Deirdre",
+      "bid": "mqz3gxmxcq9c",
+      "score": 11,
+      "correct": 11,
+      "maxPossible": 78,
+      "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T01:57:03.854Z"
+      "submittedAt": "2026-06-29T10:48:15.954Z"
     },
     {
       "user": "Nick",
       "bid": "mqz351y18631",
-      "score": 7,
-      "correct": 7,
+      "score": 10,
+      "correct": 10,
       "maxPossible": 75,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:40:00.069Z"
     },
     {
-      "user": "M",
-      "bid": "mqz6o60d41tv",
-      "score": 6,
-      "correct": 6,
-      "maxPossible": 32,
-      "finalPick": "NED beats JPN",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T12:20:23.421Z"
-    },
-    {
       "user": "Karen",
       "bid": "mqz6u51i1ro9",
-      "score": 6,
-      "correct": 6,
+      "score": 9,
+      "correct": 9,
       "maxPossible": 30,
       "finalPick": "NED beats CIV",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T12:32:53.982Z"
     },
     {
+      "user": "Harvey",
+      "bid": "mqyh5otw1y1g",
+      "score": 8,
+      "correct": 8,
+      "maxPossible": 73,
+      "finalPick": "FRA beats NOR",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T01:57:03.854Z"
+    },
+    {
+      "user": "M",
+      "bid": "mqz6o60d41tv",
+      "score": 7,
+      "correct": 7,
+      "maxPossible": 30,
+      "finalPick": "NED beats JPN",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T12:20:23.421Z"
+    },
+    {
       "user": "Ted!",
       "bid": "mqzk0bfe71fi",
       "score": 6,
       "correct": 6,
-      "maxPossible": 60,
+      "maxPossible": 51,
       "finalPick": "MEX beats NED",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T18:32:43.263Z"
