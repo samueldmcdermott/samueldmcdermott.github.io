@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-07-03T04:55:07Z",
-  "resultsCount": 13,
+  "updatedAt": "2026-07-03T23:50:35Z",
+  "resultsCount": 14,
   "thirdDecided": false,
   "entries": [
     {
@@ -8,36 +8,36 @@
       "bid": "mqykcjzr9z3d",
       "score": 11,
       "correct": 11,
-      "maxPossible": 70,
+      "maxPossible": 69,
       "finalPick": "BRA beats ESP",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:52:58.936Z"
     },
     {
-      "user": "Deirdre",
-      "bid": "mqz3gxmxcq9c",
-      "score": 11,
-      "correct": 11,
-      "maxPossible": 78,
-      "finalPick": "FRA beats ARG",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T10:48:15.954Z"
-    },
-    {
       "user": "Nick",
       "bid": "mqz351y18631",
-      "score": 10,
-      "correct": 10,
+      "score": 11,
+      "correct": 11,
       "maxPossible": 75,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:40:00.069Z"
     },
     {
+      "user": "Deirdre",
+      "bid": "mqz3gxmxcq9c",
+      "score": 11,
+      "correct": 11,
+      "maxPossible": 77,
+      "finalPick": "FRA beats ARG",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T10:48:15.954Z"
+    },
+    {
       "user": "Karen",
       "bid": "mqz6u51i1ro9",
-      "score": 9,
-      "correct": 9,
+      "score": 10,
+      "correct": 10,
       "maxPossible": 30,
       "finalPick": "NED beats CIV",
       "thirdCorrect": 0,
@@ -46,8 +46,8 @@
     {
       "user": "Harvey",
       "bid": "mqyh5otw1y1g",
-      "score": 8,
-      "correct": 8,
+      "score": 9,
+      "correct": 9,
       "maxPossible": 73,
       "finalPick": "FRA beats NOR",
       "thirdCorrect": 0,
@@ -56,8 +56,8 @@
     {
       "user": "M",
       "bid": "mqz6o60d41tv",
-      "score": 7,
-      "correct": 7,
+      "score": 8,
+      "correct": 8,
       "maxPossible": 30,
       "finalPick": "NED beats JPN",
       "thirdCorrect": 0,
@@ -66,8 +66,8 @@
     {
       "user": "Ted!",
       "bid": "mqzk0bfe71fi",
-      "score": 6,
-      "correct": 6,
+      "score": 7,
+      "correct": 7,
       "maxPossible": 51,
       "finalPick": "MEX beats NED",
       "thirdCorrect": 0,
