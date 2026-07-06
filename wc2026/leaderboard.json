@@ -1,27 +1,47 @@
 {
-  "updatedAt": "2026-07-05T03:21:25Z",
-  "resultsCount": 18,
+  "updatedAt": "2026-07-06T00:04:50Z",
+  "resultsCount": 19,
   "thirdDecided": false,
   "entries": [
     {
       "user": "Nick",
       "bid": "mqz351y18631",
-      "score": 17,
-      "correct": 15,
-      "maxPossible": 75,
+      "score": 19,
+      "correct": 16,
+      "maxPossible": 77,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:40:00.069Z"
+    },
+    {
+      "user": "Sam",
+      "bid": "mqykcjzr9z3d",
+      "score": 16,
+      "correct": 14,
+      "maxPossible": 68,
+      "finalPick": "BRA beats ESP",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T01:52:58.936Z"
     },
     {
       "user": "Deirdre",
       "bid": "mqz3gxmxcq9c",
       "score": 16,
       "correct": 14,
-      "maxPossible": 74,
+      "maxPossible": 72,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:48:15.954Z"
+    },
+    {
+      "user": "M",
+      "bid": "mqz6o60d41tv",
+      "score": 16,
+      "correct": 13,
+      "maxPossible": 34,
+      "finalPick": "NED beats JPN",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T12:20:23.421Z"
     },
     {
       "user": "Karen",
@@ -34,34 +54,14 @@
       "submittedAt": "2026-06-29T12:32:53.982Z"
     },
     {
-      "user": "Sam",
-      "bid": "mqykcjzr9z3d",
-      "score": 14,
-      "correct": 13,
-      "maxPossible": 68,
-      "finalPick": "BRA beats ESP",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T01:52:58.936Z"
-    },
-    {
       "user": "Harvey",
       "bid": "mqyh5otw1y1g",
       "score": 14,
       "correct": 12,
-      "maxPossible": 72,
+      "maxPossible": 58,
       "finalPick": "FRA beats NOR",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:57:03.854Z"
-    },
-    {
-      "user": "M",
-      "bid": "mqz6o60d41tv",
-      "score": 14,
-      "correct": 12,
-      "maxPossible": 32,
-      "finalPick": "NED beats JPN",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T12:20:23.421Z"
     },
     {
       "user": "Ted!",
