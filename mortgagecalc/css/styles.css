@@ -1,0 +1,226 @@
+:root{
+  --ink:#111111;          /* primary text */
+  --ink-2:#3a3a3a;        /* secondary text */
+  --ink-3:#6b6b6b;        /* muted text */
+  --line:#d6d6d6;         /* hairline / borders */
+  --line-2:#bdbdbd;       /* stronger hairline */
+  --surface:#ffffff;      /* page / card */
+  --surface-2:#f4f4f4;    /* insets, tracks */
+  --surface-3:#ececec;
+  --accent:#111111;       /* interactive fills (grayscale) */
+  --accent-line:#1f6feb;  /* the ONE accent hue: active-loan curve */
+  --focus:#000000;
+  --grid:#e6e6e6;
+  /* chart series grayscale steps (non-active loans), dark->light */
+  --s-1:#111111;
+  --s-2:#5a5a5a;
+  --s-3:#8a8a8a;
+  --s-4:#b4b4b4;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#f2f2f2; --ink-2:#c9c9c9; --ink-3:#9a9a9a;
+    --line:#333333; --line-2:#454545;
+    --surface:#0e0e0e; --surface-2:#1a1a1a; --surface-3:#222222;
+    --accent:#f2f2f2; --accent-line:#5aa0ff; --focus:#ffffff;
+    --grid:#242424;
+    --s-1:#f2f2f2; --s-2:#c0c0c0; --s-3:#8f8f8f; --s-4:#5a5a5a;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#f2f2f2; --ink-2:#c9c9c9; --ink-3:#9a9a9a;
+  --line:#333333; --line-2:#454545;
+  --surface:#0e0e0e; --surface-2:#1a1a1a; --surface-3:#222222;
+  --accent:#f2f2f2; --accent-line:#5aa0ff; --focus:#ffffff;
+  --grid:#242424;
+  --s-1:#f2f2f2; --s-2:#c0c0c0; --s-3:#8f8f8f; --s-4:#5a5a5a;
+}
+:root[data-theme="light"]{
+  --ink:#111111; --ink-2:#3a3a3a; --ink-3:#6b6b6b;
+  --line:#d6d6d6; --line-2:#bdbdbd;
+  --surface:#ffffff; --surface-2:#f4f4f4; --surface-3:#ececec;
+  --accent:#111111; --accent-line:#1f6feb; --focus:#000000;
+  --grid:#e6e6e6;
+  --s-1:#111111; --s-2:#5a5a5a; --s-3:#8a8a8a; --s-4:#b4b4b4;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;
+  background:var(--surface);
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+  font-size:15px;
+}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 64px}
+header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-0.01em}
+.sub{color:var(--ink-3);font-size:12.5px;margin-top:6px}
+
+section{margin-bottom:26px}
+.section-title{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+
+/* ---- comparison tabs ---- */
+.tabsbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:20px}
+#tabs{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0}
+.tab{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:8px;padding:2px 4px 2px 8px;background:var(--surface)}
+.tab.on{border-color:var(--focus);background:var(--surface-2)}
+.tab-vis{margin:0;accent-color:var(--accent-line);cursor:pointer}
+.tab-sel{border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13px;padding:6px 4px;cursor:pointer}
+.tab.on .tab-sel{color:var(--ink);font-weight:600}
+.tab-x{border:0;background:transparent;color:var(--ink-3);font-family:inherit;font-size:12px;cursor:pointer;padding:2px 6px;border-radius:5px}
+.tab-x:hover{color:var(--ink);background:var(--surface-3)}
+.tab-add{border:1px dashed var(--line-2);background:transparent;color:var(--ink-2);font-family:inherit;font-size:13px;padding:8px 12px;border-radius:8px;cursor:pointer}
+.tab-add:hover{color:var(--ink);border-color:var(--focus)}
+.copylink{border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-2);font-family:inherit;font-size:12px;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.copylink:hover{color:var(--ink)}
+
+/* ---- input fields ---- */
+.field{margin-bottom:18px}
+.field-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.field label{font-size:13px;color:var(--ink-2);font-weight:600}
+.field .hint{font-size:11px;color:var(--ink-3)}
+.field.derived label{color:var(--ink-3)}
+.input-row{display:flex;align-items:stretch;gap:0;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--surface)}
+.input-row.derived{background:var(--surface-2);border-style:dashed}
+.input-row:focus-within{border-color:var(--focus);box-shadow:0 0 0 2px var(--surface-3)}
+.prefix{display:flex;align-items:center;padding:0 10px;color:var(--ink-3);background:var(--surface-2);border-right:1px solid var(--line);font-size:13px}
+input[type=number],input[type=text]{
+  flex:1;min-width:0;border:0;outline:0;background:transparent;
+  font-family:inherit;font-size:15px;color:var(--ink);
+  padding:11px 12px;font-variant-numeric:tabular-nums;
+}
+.suffix{display:flex;align-items:center;padding:0 12px;color:var(--ink-3);background:var(--surface-2);border-left:1px solid var(--line);font-size:13px}
+input[readonly]{color:var(--ink-3)}
+
+/* ---- sliders ---- */
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:22px;margin:8px 0 0;
+  background:transparent;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line-2);border-radius:2px}
+input[type=range]::-moz-range-track{height:2px;background:var(--line-2);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-7px;
+  background:var(--accent);border:2px solid var(--surface);border-radius:50%;
+  box-shadow:0 0 0 1px var(--line-2);
+}
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;background:var(--accent);border:2px solid var(--surface);
+  border-radius:50%;box-shadow:0 0 0 1px var(--line-2);
+}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--focus)}
+input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--focus)}
+
+/* editable bound endpoints under $ sliders */
+.range-scale{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--ink-3);margin-top:2px;font-variant-numeric:tabular-nums}
+.range-scale.static{padding:0 2px}
+.bound{display:inline-flex;align-items:center;gap:2px;color:var(--ink-3)}
+.bound input{
+  width:78px;border:1px solid transparent;border-radius:4px;background:transparent;
+  font-family:inherit;font-size:10.5px;color:var(--ink-3);padding:2px 3px;text-align:left;
+  font-variant-numeric:tabular-nums;
+}
+.bound input:hover{border-color:var(--line)}
+.bound input:focus{outline:0;border-color:var(--focus);color:var(--ink);background:var(--surface)}
+.bound.max{margin-left:auto}
+.bound.max input{text-align:right}
+
+/* ---- term selector ---- */
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.seg button{
+  border:0;background:var(--surface);color:var(--ink-2);font-family:inherit;
+  font-size:14px;padding:10px 18px;cursor:pointer;border-right:1px solid var(--line);
+}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:var(--surface);font-weight:600}
+
+/* ---- rate row ---- */
+.rate-note{font-size:11px;color:var(--ink-3);margin-top:8px}
+.rate-note a{color:var(--ink-2)}
+.rate-note code{background:var(--surface-2);padding:1px 4px;border-radius:3px}
+
+/* ---- payment hero ---- */
+.hero{
+  border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);
+  padding:24px 24px;text-align:center;
+}
+.hero .cap{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+.hero .num{font-size:clamp(38px,11vw,64px);font-weight:600;letter-spacing:-0.02em;line-height:1.05;margin:6px 0 2px}
+.hero .loan-line{font-size:12.5px;color:var(--ink-3);margin-top:8px}
+.hero .breakdown{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px 22px;margin-top:16px;
+  padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;
+}
+.hero .breakdown b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.hero .breakdown span{color:var(--ink-3)}
+
+/* ---- extra payment controls ---- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mini label{font-size:12px;color:var(--ink-2);font-weight:600;display:block;margin-bottom:5px}
+
+/* ---- chart ---- */
+.chart-card{border:1px solid var(--line);border-radius:12px;padding:18px 14px 8px}
+.payoff{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 18px;margin-bottom:14px;padding:0 4px}
+.payoff .cap{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-3)}
+.payoff .date{font-size:clamp(24px,6vw,34px);font-weight:600;letter-spacing:-0.01em;line-height:1.1}
+.payoff .saved{font-size:12px;color:var(--ink-3)}
+.payoff .saved b{color:var(--ink);font-weight:600}
+figure{margin:0}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:12px 4px 4px;font-size:12px;color:var(--ink-2)}
+.legend .item{display:inline-flex;align-items:center;gap:7px}
+.legend .key{width:22px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+.gl{stroke:var(--grid);stroke-width:1}
+.axis-text{fill:var(--ink-3);font-size:10.5px;font-family:inherit;font-variant-numeric:tabular-nums}
+.axis-line{stroke:var(--line-2);stroke-width:1}
+.series{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.hoverline{stroke:var(--line-2);stroke-width:1}
+.tip{
+  position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line-2);
+  border-radius:8px;padding:8px 10px;font-size:12px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,0.12);
+  transform:translate(-50%,calc(-100% - 12px));white-space:nowrap;opacity:0;transition:opacity .08s;z-index:5;
+}
+.tip .tt-when{color:var(--ink-3);font-size:11px;margin-bottom:4px}
+.tip .tt-row{display:flex;justify-content:space-between;gap:16px;font-variant-numeric:tabular-nums}
+.tip .tt-row b{font-weight:600}
+.chart-hostwrap{position:relative}
+
+/* ---- disclaimer ---- */
+.disclaimer{
+  border:1px solid var(--line-2);border-radius:10px;background:var(--surface-2);
+  padding:16px 18px;font-size:12px;color:var(--ink-2);line-height:1.6;
+}
+.disclaimer strong{color:var(--ink);text-transform:uppercase;letter-spacing:0.06em;font-size:11px}
+footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-3);text-align:center}
+footer a{color:var(--ink-3)}
+.themebtn{
+  float:right;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-3);
+  font-family:inherit;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;
+}
+.themebtn:hover{color:var(--ink)}
+
+/* =========================================================================
+   Compact web layout: on wider screens, put label+input on the left and the
+   slider on the right so the three loan basics take far less vertical room.
+   Mobile keeps the roomy stacked layout.
+   ========================================================================= */
+@media (min-width:620px){
+  .basics .field{
+    display:grid;
+    grid-template-columns:minmax(220px,300px) 1fr;
+    column-gap:24px;align-items:center;
+    margin-bottom:12px;
+  }
+  .basics .field-head{grid-column:1;margin-bottom:0}
+  .basics .input-row{grid-column:1;grid-row:2}
+  .basics .field label{font-size:12.5px}
+  .basics .slider-col{grid-column:2;grid-row:1 / span 2;align-self:center}
+  .basics input[type=range]{margin-top:0}
+  .basics .range-scale{margin-top:4px}
+}
+@media (max-width:559px){
+  .grid2{grid-template-columns:1fr}
+}

@@ -11,3 +11,6 @@ _site/
 .DS_Store
 Thumbs.db
 *.swp
+
+# Mortgage calculator legacy source (original Python / notebook)
+mortgagecalc/legacy/

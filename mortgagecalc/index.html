@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Mortgage Calculator</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <button class="themebtn" id="themeToggle" type="button" aria-label="Toggle color theme">◐ theme</button>
+    <h1>Mortgage Calculator</h1>
+    <div class="sub">Estimate a fixed-rate monthly payment and compare a few loans side by side.</div>
+  </header>
+
+  <!-- ============ COMPARISON TABS ============ -->
+  <div class="tabsbar">
+    <div id="tabs" role="tablist" aria-label="Loans to compare"></div>
+    <button class="copylink" id="copylink" type="button" title="Copy a shareable link to this comparison">Copy link</button>
+  </div>
+
+  <!-- ============ INPUTS ============ -->
+  <section class="basics">
+    <h2 class="section-title">1 · Loan basics</h2>
+    <div class="sub" style="margin:-6px 0 16px">Enter any <b>two</b> of sale price, loan amount, and down payment — the field you edited longest ago is the one computed for you.</div>
+
+    <!-- Sale price -->
+    <div class="field" id="field-price">
+      <div class="field-head">
+        <label for="price">Sale price</label>
+        <span class="hint" id="price-hint"></span>
+      </div>
+      <div class="input-row" id="row-price">
+        <span class="prefix">$</span>
+        <input type="text" inputmode="numeric" id="price" autocomplete="off">
+      </div>
+      <div class="slider-col">
+        <input type="range" id="price-slider" aria-label="Sale price slider">
+        <div class="range-scale">
+          <span class="bound min">$<input type="text" inputmode="numeric" id="price-min" aria-label="Sale price slider minimum"></span>
+          <span class="bound max">$<input type="text" inputmode="numeric" id="price-max" aria-label="Sale price slider maximum"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loan amount -->
+    <div class="field" id="field-loan">
+      <div class="field-head">
+        <label for="loan">Loan amount</label>
+        <span class="hint" id="loan-hint"></span>
+      </div>
+      <div class="input-row" id="row-loan">
+        <span class="prefix">$</span>
+        <input type="text" inputmode="numeric" id="loan" autocomplete="off">
+      </div>
+      <div class="slider-col">
+        <input type="range" id="loan-slider" aria-label="Loan amount slider">
+        <div class="range-scale">
+          <span class="bound min">$<input type="text" inputmode="numeric" id="loan-min" aria-label="Loan amount slider minimum"></span>
+          <span class="bound max">$<input type="text" inputmode="numeric" id="loan-max" aria-label="Loan amount slider maximum"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Down payment fraction -->
+    <div class="field" id="field-dp">
+      <div class="field-head">
+        <label for="dp">Down payment</label>
+        <span class="hint" id="dp-hint"></span>
+      </div>
+      <div class="input-row" id="row-dp">
+        <input type="text" inputmode="decimal" id="dp" autocomplete="off">
+        <span class="suffix">%</span>
+      </div>
+      <div class="slider-col">
+        <input type="range" id="dp-slider" min="0" max="50" step="0.5" aria-label="Down payment percent slider">
+        <div class="range-scale static"><span>0%</span><span>50%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TERM + RATE ============ -->
+  <section>
+    <h2 class="section-title">2 · Term &amp; rate</h2>
+    <div class="field">
+      <div class="field-head"><label>Loan duration</label></div>
+      <div class="seg" id="term-seg" role="group" aria-label="Loan duration">
+        <button type="button" data-term="10">10 yr</button>
+        <button type="button" data-term="15">15 yr</button>
+        <button type="button" data-term="30" class="on">30 yr</button>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:22px">
+      <div class="field-head">
+        <label for="rate">Interest rate (APR)</label>
+        <span class="hint" id="rate-hint"></span>
+      </div>
+      <div class="input-row" id="row-rate">
+        <input type="text" inputmode="decimal" id="rate" autocomplete="off">
+        <span class="suffix">%</span>
+      </div>
+      <input type="range" id="rate-slider" step="0.01" aria-label="Interest rate slider">
+      <div class="range-scale static"><span id="rate-min"></span><span id="rate-max"></span></div>
+      <div class="rate-note" id="rate-note"></div>
+    </div>
+  </section>
+
+  <!-- ============ PAYMENT HERO ============ -->
+  <section>
+    <h2 class="section-title">3 · Estimated payment</h2>
+    <div class="hero">
+      <div class="cap">Base monthly payment (principal + interest)</div>
+      <div class="num" id="payment">$0</div>
+      <div class="loan-line" id="loanline"></div>
+      <div class="breakdown">
+        <span>Total paid <b id="total-paid">$0</b></span>
+        <span>Total interest <b id="total-interest">$0</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AMORTIZATION ============ -->
+  <section>
+    <h2 class="section-title">4 · Payoff over time</h2>
+
+    <div class="grid2" style="margin-bottom:18px">
+      <div class="mini field">
+        <label for="extra">Additional monthly payment</label>
+        <div class="input-row"><span class="prefix">$</span>
+          <input type="text" inputmode="numeric" id="extra" value="0" autocomplete="off"></div>
+      </div>
+      <div class="mini field">
+        <label for="extra-start">Starting at month</label>
+        <div class="input-row">
+          <input type="number" id="extra-start" value="0" min="0" step="1" autocomplete="off">
+          <span class="suffix">mo</span></div>
+      </div>
+    </div>
+    <div class="mini field" style="max-width:280px;margin-bottom:20px">
+      <label for="firstpay">First payment date</label>
+      <div class="input-row"><input type="month" id="firstpay" autocomplete="off"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="payoff">
+        <div>
+          <div class="cap">Final payment · active loan</div>
+          <div class="date" id="payoff-date">—</div>
+        </div>
+        <div class="saved" id="payoff-saved"></div>
+      </div>
+      <div class="chart-hostwrap">
+        <figure id="chart-host" aria-label="Loan balance remaining over time"></figure>
+        <div class="tip" id="tip"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <!-- ============ DISCLAIMER ============ -->
+  <section>
+    <div class="disclaimer">
+      <strong>Not investment or financial advice</strong><br>
+      This calculator is provided for general informational and educational purposes only. It is
+      <b>not</b> investment, financial, tax, legal, or lending advice of any kind, and it is not an offer,
+      solicitation, or commitment to lend. Estimates are simplified: they cover principal and interest only and
+      exclude property taxes, homeowners &amp; mortgage insurance (PMI), HOA dues, closing costs, points, and fees.
+      Interest-rate defaults are historical weekly averages that will not match any quote you receive. Do not rely on
+      these figures for any financial decision — consult a licensed mortgage professional and confirm all numbers with
+      your lender. No warranty is made as to accuracy. This page sets <b>no cookies</b> and stores nothing on your
+      device; a comparison lives only in the page URL you choose to copy.
+    </div>
+  </section>
+
+  <footer>
+    Runs entirely in your browser · no cookies, no tracking, no data collected ·
+    <a href="https://fred.stlouisfed.org/series/MORTGAGE30US" target="_blank" rel="noopener">rate source</a>
+  </footer>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
