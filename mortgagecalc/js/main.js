@@ -9,7 +9,7 @@ import {
   RATE_DEFAULTS, MAX_LOANS, defaultLoan, defaultBounds, loanName,
   recomputeDerived, derivedField, markEdited, tryLiveRates,
 } from "./loans.js";
-import { drawChart } from "./chart.js";
+import { drawChart, loanLineStyles } from "./chart.js";
 import { encodeState, decodeState, writeHash } from "./share.js";
 
 const $ = (id) => document.getElementById(id);
@@ -280,35 +280,49 @@ function render() {
   });
   drawChart($("chart-host"), $("tip"), $("legend"), series, { firstPay: fp });
 
-  renderChartSummary();
+  renderChartSummary(series);
 
   // shareable hash
   scheduleHashUpdate();
 }
 
-// summary table under the chart legend: one row per loan (amount $k, monthly
-// payment, payoff date). Shown only when comparing more than one loan.
-function renderChartSummary() {
+// summary table under the chart legend: one row per loan showing its line-style
+// key, name, and all inputs/outputs. Shown only when comparing >1 loan.
+function renderChartSummary(series) {
   const host = $("chart-summary");
   if (state.loans.length <= 1) { host.innerHTML = ""; return; }
+
+  const styles = loanLineStyles(series); // keyed by loan name; visible loans only
   let rows = "";
   state.loans.forEach((L, i) => {
     const m = new Mortgage({ loanAmount: L.loan, interestApr: L.rate, lengthYears: L.term });
     const payoffMonths = m.totalMonthsToPayOff(extraSchedule(L));
     const payoffDate = addMonths(firstPayDate(L), Math.max(0, payoffMonths - 1));
     const amtK = "$" + Math.round(L.loan / 1000).toLocaleString("en-US") + "k";
+    const price = fmtUSD0(L.price);
+    const dpPct = (L.dp * 100).toFixed(1).replace(/\.0$/, "") + "%";
+    const rate = fmtRate(L.rate) + "%";
+    const extra = L.extra > 0 ? fmtUSD0(L.extra) + "/mo" : "—";
     const pay = isFinite(m.baseMonthlyPayment) ? fmtUSD0(m.baseMonthlyPayment) + "/mo" : "—";
+
+    const st = styles[L.name];
+    const key = st
+      ? `<span class="csum-key" style="border-top-color:${st.color};${st.dash ? "border-top-style:dashed;" : ""}"></span>`
+      : `<span class="csum-key off"></span>`;
+
     const cls = "csum-row" + (i === state.activeIndex ? " active" : "") + (L.visible ? "" : " off");
     rows +=
       `<tr class="${cls}">` +
-        `<td class="csum-name">${L.name}${L.visible ? "" : " <span class=\"csum-hidden\">(hidden)</span>"}</td>` +
-        `<td>${amtK}</td><td>${pay}</td><td>${fmtMonthYear(payoffDate)}</td>` +
+        `<td class="csum-name"><span class="csum-keywrap">${key}</span>${L.name}${L.visible ? "" : " <span class=\"csum-hidden\">(hidden)</span>"}</td>` +
+        `<td>${price}</td><td>${dpPct}</td><td>${amtK}</td>` +
+        `<td>${rate}</td><td>${extra}</td><td>${pay}</td><td>${fmtMonthYear(payoffDate)}</td>` +
       `</tr>`;
   });
   host.innerHTML =
-    `<table class="csum"><thead><tr>` +
-      `<th>Loan</th><th>Amount</th><th>Payment</th><th>Payoff</th>` +
-    `</tr></thead><tbody>${rows}</tbody></table>`;
+    `<div class="csum-scroll"><table class="csum"><thead><tr>` +
+      `<th>Loan</th><th>Sale price</th><th>Down</th><th>Amount</th>` +
+      `<th>Rate</th><th>Extra</th><th>Payment</th><th>Payoff</th>` +
+    `</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // Track whether the user has touched anything. A pristine single-default loan

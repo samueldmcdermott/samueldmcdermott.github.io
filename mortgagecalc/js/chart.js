@@ -12,6 +12,25 @@ const DASH = ["", "6 5", "2 4", "8 4 2 4"];
 // grayscale steps for non-active loans (resolved via CSS vars set on :root)
 const GRAYS = ["var(--s-1)", "var(--s-2)", "var(--s-3)", "var(--s-4)"];
 
+// The single source of truth for how each loan's curve is styled. Active loan =
+// accent solid; others cycle grayscale + dash in visible order. Returns a map
+// keyed by loan name -> { color, dash } so the chart and the summary table agree.
+export function loanLineStyles(series) {
+  const vis = series.filter((s) => s.visible);
+  const ordered = [...vis].sort((a, b) => (a.active === b.active ? 0 : a.active ? 1 : -1));
+  const styles = {};
+  let grayIdx = 0;
+  ordered.forEach((s) => {
+    if (s.active) {
+      styles[s.name] = { color: "var(--accent-line)", dash: "" };
+    } else {
+      styles[s.name] = { color: GRAYS[grayIdx % GRAYS.length], dash: DASH[grayIdx % DASH.length] };
+      grayIdx++;
+    }
+  });
+  return styles;
+}
+
 let chartData = null; // stashed for hover
 
 // series: [{ name, balances:[...], payoffMonth, active, visible, hasExtra, baseBalances? }]
@@ -61,7 +80,7 @@ export function drawChart(host, tipEl, legendEl, series, opts) {
 
   // draw order: non-active first, active last (on top). track styling for legend/hover.
   const drawn = [];
-  let grayIdx = 0;
+  const styleOf = loanLineStyles(vis);
   const ordered = [...vis].sort((a, b2) => (a.active === b2.active ? 0 : a.active ? 1 : -1));
   let paths = "", ends = "";
   const endPt = (arr, color) => {
@@ -70,15 +89,7 @@ export function drawChart(host, tipEl, legendEl, series, opts) {
   };
 
   ordered.forEach((s) => {
-    let color, dash;
-    if (s.active) {
-      color = "var(--accent-line)";
-      dash = "";
-    } else {
-      color = GRAYS[grayIdx % GRAYS.length];
-      dash = DASH[grayIdx % DASH.length];
-      grayIdx++;
-    }
+    const { color, dash } = styleOf[s.name];
     // companion "no extra" baseline, only for the active loan with extra payments
     if (s.active && s.hasExtra && s.baseBalances) {
       paths += `<path class="series" d="${pathOf(s.baseBalances)}" stroke="var(--s-4)" stroke-dasharray="5 5"/>`;

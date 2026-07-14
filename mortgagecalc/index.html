@@ -85,28 +85,30 @@
   <!-- ============ TERM + RATE ============ -->
   <section>
     <h2 class="section-title">2 · Term &amp; rate</h2>
-    <div class="field">
-      <div class="field-head"><label>Loan duration</label></div>
-      <div class="seg" id="term-seg" role="group" aria-label="Loan duration">
-        <button type="button" data-term="10">10 yr</button>
-        <button type="button" data-term="15">15 yr</button>
-        <button type="button" data-term="30" class="on">30 yr</button>
+    <div class="termrate">
+      <div class="field term-field">
+        <div class="field-head"><label>Loan duration</label></div>
+        <div class="seg" id="term-seg" role="group" aria-label="Loan duration">
+          <button type="button" data-term="10">10 yr</button>
+          <button type="button" data-term="15">15 yr</button>
+          <button type="button" data-term="30" class="on">30 yr</button>
+        </div>
       </div>
-    </div>
 
-    <div class="field" style="margin-top:22px">
-      <div class="field-head">
-        <label for="rate">Interest rate (APR)</label>
-        <span class="hint" id="rate-hint"></span>
+      <div class="field rate-field">
+        <div class="field-head">
+          <label for="rate">Interest rate (APR)</label>
+          <span class="hint" id="rate-hint"></span>
+        </div>
+        <div class="input-row" id="row-rate">
+          <input type="text" inputmode="decimal" id="rate" autocomplete="off">
+          <span class="suffix">%</span>
+        </div>
+        <input type="range" id="rate-slider" step="0.01" aria-label="Interest rate slider">
+        <div class="range-scale static"><span id="rate-min"></span><span id="rate-max"></span></div>
       </div>
-      <div class="input-row" id="row-rate">
-        <input type="text" inputmode="decimal" id="rate" autocomplete="off">
-        <span class="suffix">%</span>
-      </div>
-      <input type="range" id="rate-slider" step="0.01" aria-label="Interest rate slider">
-      <div class="range-scale static"><span id="rate-min"></span><span id="rate-max"></span></div>
-      <div class="rate-note" id="rate-note"></div>
     </div>
+    <div class="rate-note" id="rate-note"></div>
   </section>
 
   <!-- ============ PAYMENT HERO ============ -->
