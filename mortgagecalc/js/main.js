@@ -14,6 +14,9 @@ import { encodeState, decodeState, writeHash } from "./share.js";
 
 const $ = (id) => document.getElementById(id);
 
+// fixed interest-rate slider bounds
+const RATE_MIN = 1.5, RATE_MAX = 20;
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -159,11 +162,12 @@ function syncBasicField(key, val, isDerived) {
 function syncRateField(loan) {
   const input = $("rate"), slider = $("rate-slider");
   if (document.activeElement !== input) input.value = fmtRate(loan.rate);
-  const min = Math.max(0, loan.rate - 1.5), max = loan.rate + 1.5;
-  slider.min = min.toFixed(2); slider.max = max.toFixed(2); slider.step = 0.01;
-  if (document.activeElement !== slider) slider.value = loan.rate;
-  $("rate-min").textContent = min.toFixed(2) + "%";
-  $("rate-max").textContent = max.toFixed(2) + "%";
+  // fixed bounds — never derived from the current value (that re-centers the thumb)
+  const min = RATE_MIN, max = RATE_MAX;
+  slider.min = min; slider.max = max; slider.step = 0.05;
+  if (document.activeElement !== slider) slider.value = clamp(loan.rate, min, max);
+  $("rate-min").textContent = min.toFixed(1) + "%";
+  $("rate-max").textContent = max.toFixed(0) + "%";
 
   const d = RATE_DEFAULTS;
   const liveTxt = d.live
@@ -276,8 +280,35 @@ function render() {
   });
   drawChart($("chart-host"), $("tip"), $("legend"), series, { firstPay: fp });
 
+  renderChartSummary();
+
   // shareable hash
   scheduleHashUpdate();
+}
+
+// summary table under the chart legend: one row per loan (amount $k, monthly
+// payment, payoff date). Shown only when comparing more than one loan.
+function renderChartSummary() {
+  const host = $("chart-summary");
+  if (state.loans.length <= 1) { host.innerHTML = ""; return; }
+  let rows = "";
+  state.loans.forEach((L, i) => {
+    const m = new Mortgage({ loanAmount: L.loan, interestApr: L.rate, lengthYears: L.term });
+    const payoffMonths = m.totalMonthsToPayOff(extraSchedule(L));
+    const payoffDate = addMonths(firstPayDate(L), Math.max(0, payoffMonths - 1));
+    const amtK = "$" + Math.round(L.loan / 1000).toLocaleString("en-US") + "k";
+    const pay = isFinite(m.baseMonthlyPayment) ? fmtUSD0(m.baseMonthlyPayment) + "/mo" : "—";
+    const cls = "csum-row" + (i === state.activeIndex ? " active" : "") + (L.visible ? "" : " off");
+    rows +=
+      `<tr class="${cls}">` +
+        `<td class="csum-name">${L.name}${L.visible ? "" : " <span class=\"csum-hidden\">(hidden)</span>"}</td>` +
+        `<td>${amtK}</td><td>${pay}</td><td>${fmtMonthYear(payoffDate)}</td>` +
+      `</tr>`;
+  });
+  host.innerHTML =
+    `<table class="csum"><thead><tr>` +
+      `<th>Loan</th><th>Amount</th><th>Payment</th><th>Payoff</th>` +
+    `</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // Track whether the user has touched anything. A pristine single-default loan
@@ -359,7 +390,7 @@ function wire() {
   $("rate").addEventListener("blur", render);
   $("rate-slider").addEventListener("input", (e) => {
     const loan = activeLoan();
-    loan.rate = clamp(parseFloat(e.target.value), 0, 25); loan.rateEdited = true; render();
+    loan.rate = clamp(parseFloat(e.target.value), RATE_MIN, RATE_MAX); loan.rateEdited = true; render();
   });
 
   // extra payments
