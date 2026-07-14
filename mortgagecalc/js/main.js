@@ -315,13 +315,13 @@ function renderChartSummary(series) {
       `<tr class="${cls}">` +
         `<td class="csum-name"><span class="csum-keywrap">${key}</span>${L.name}${L.visible ? "" : " <span class=\"csum-hidden\">(hidden)</span>"}</td>` +
         `<td>${price}</td><td>${dpPct}</td><td>${amtK}</td>` +
-        `<td>${rate}</td><td>${extra}</td><td>${pay}</td><td>${fmtMonthYear(payoffDate)}</td>` +
+        `<td>${rate}</td><td>${pay}</td><td>${extra}</td><td>${fmtMonthYear(payoffDate)}</td>` +
       `</tr>`;
   });
   host.innerHTML =
     `<div class="csum-scroll"><table class="csum"><thead><tr>` +
       `<th>Loan</th><th>Sale price</th><th>Down</th><th>Amount</th>` +
-      `<th>Rate</th><th>Extra</th><th>Payment</th><th>Payoff</th>` +
+      `<th>Rate</th><th>Payment</th><th>Extra</th><th>Payoff</th>` +
     `</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
