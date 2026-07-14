@@ -63,19 +63,25 @@ section{margin-bottom:26px}
 .section-title{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
 
 /* ---- comparison tabs ---- */
-.tabsbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:20px}
+.tabsbar{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;margin-bottom:20px}
 #tabs{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0}
-.tab{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:8px;padding:2px 4px 2px 8px;background:var(--surface)}
+.tab{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line-2);border-radius:8px;padding:2px 8px 4px;background:var(--surface)}
 .tab.on{border-color:var(--focus);background:var(--surface-2)}
+.tab-row{display:flex;align-items:center;gap:6px}
 .tab-vis{margin:0;accent-color:var(--accent-line);cursor:pointer}
 .tab-sel{border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13px;padding:6px 4px;cursor:pointer}
 .tab.on .tab-sel{color:var(--ink);font-weight:600}
+.tab-summary{display:flex;flex-direction:column;gap:1px;padding:0 2px 2px 24px;font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.tab.on .tab-summary{color:var(--ink-2)}
 .tab-x{border:0;background:transparent;color:var(--ink-3);font-family:inherit;font-size:12px;cursor:pointer;padding:2px 6px;border-radius:5px}
 .tab-x:hover{color:var(--ink);background:var(--surface-3)}
 .tab-add{border:1px dashed var(--line-2);background:transparent;color:var(--ink-2);font-family:inherit;font-size:13px;padding:8px 12px;border-radius:8px;cursor:pointer}
 .tab-add:hover{color:var(--ink);border-color:var(--focus)}
 .copylink{border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-2);font-family:inherit;font-size:12px;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
 .copylink:hover{color:var(--ink)}
+.resetbtn{border:1px solid var(--accent);background:var(--accent);color:var(--surface);font-family:inherit;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.resetbtn:hover{opacity:0.85}
+.resetbtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* ---- input fields ---- */
 .field{margin-bottom:18px}

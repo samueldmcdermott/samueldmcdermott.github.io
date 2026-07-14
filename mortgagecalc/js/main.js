@@ -28,17 +28,24 @@ function firstPayDate(loan) {
 }
 function activeLoan() { return state.loans[state.activeIndex]; }
 
+// reset state to a single default loan with default bounds
+function loadDefaults() {
+  const L = defaultLoan(0);
+  L.firstPayISO = toMonthInput(firstOfNextMonth());
+  state.loans = [L];
+  state.activeIndex = 0;
+  state.bounds = defaultBounds();
+}
+
 function initState() {
   const restored = decodeState(location.hash);
   if (restored) {
     state.loans = restored.loans;
     state.activeIndex = restored.activeIndex;
     state.bounds = restored.bounds;
+    dirty = true; // a shared link stays shareable
   } else {
-    const L = defaultLoan(0);
-    L.firstPayISO = toMonthInput(firstOfNextMonth());
-    state.loans = [L];
-    state.activeIndex = 0;
+    loadDefaults();
   }
   // ensure firstPayISO always set
   state.loans.forEach((L) => { if (!L.firstPayISO) L.firstPayISO = toMonthInput(firstOfNextMonth()); });
@@ -52,11 +59,15 @@ function renderTabs() {
   let html = "";
   state.loans.forEach((L, i) => {
     const on = i === state.activeIndex ? " on" : "";
+    const summary = state.loans.length > 1 ? loanSummary(L) : "";
     html +=
       `<div class="tab${on}" data-idx="${i}">` +
-        `<input type="checkbox" class="tab-vis" data-idx="${i}" ${L.visible ? "checked" : ""} title="Show on chart" aria-label="Show ${L.name} on chart">` +
-        `<button type="button" class="tab-sel" data-idx="${i}">${L.name}</button>` +
-        (state.loans.length > 1 ? `<button type="button" class="tab-x" data-idx="${i}" title="Remove ${L.name}" aria-label="Remove ${L.name}">✕</button>` : "") +
+        `<div class="tab-row">` +
+          `<input type="checkbox" class="tab-vis" data-idx="${i}" ${L.visible ? "checked" : ""} title="Show on chart" aria-label="Show ${L.name} on chart">` +
+          `<button type="button" class="tab-sel" data-idx="${i}">${L.name}</button>` +
+          (state.loans.length > 1 ? `<button type="button" class="tab-x" data-idx="${i}" title="Remove ${L.name}" aria-label="Remove ${L.name}">✕</button>` : "") +
+        `</div>` +
+        summary +
       `</div>`;
   });
   if (state.loans.length < MAX_LOANS) {
@@ -65,7 +76,7 @@ function renderTabs() {
   host.innerHTML = html;
 
   host.querySelectorAll(".tab-sel").forEach((b) =>
-    b.addEventListener("click", () => { state.activeIndex = +b.dataset.idx; render(); }));
+    b.addEventListener("click", () => { markDirty(); state.activeIndex = +b.dataset.idx; render(); }));
   host.querySelectorAll(".tab-vis").forEach((c) =>
     c.addEventListener("change", () => { state.loans[+c.dataset.idx].visible = c.checked; render(); }));
   host.querySelectorAll(".tab-x").forEach((b) =>
@@ -74,8 +85,23 @@ function renderTabs() {
   if (add) add.addEventListener("click", addLoan);
 }
 
+// compact per-loan summary shown under each tab when comparing (>1 loan):
+// loan amount in $k, monthly payment, and payoff date (honors extra payments).
+function loanSummary(L) {
+  const m = new Mortgage({ loanAmount: L.loan, interestApr: L.rate, lengthYears: L.term });
+  const sched = extraSchedule(L);
+  const payoffMonths = m.totalMonthsToPayOff(sched);
+  const payoffDate = addMonths(firstPayDate(L), Math.max(0, payoffMonths - 1));
+  const amtK = "$" + Math.round(L.loan / 1000).toLocaleString("en-US") + "k";
+  const pay = isFinite(m.baseMonthlyPayment) ? fmtUSD0(m.baseMonthlyPayment) + "/mo" : "—";
+  return `<div class="tab-summary">` +
+    `<span>${amtK}</span><span>${pay}</span><span>${fmtMonthYear(payoffDate)}</span>` +
+  `</div>`;
+}
+
 function addLoan() {
   if (state.loans.length >= MAX_LOANS) return;
+  markDirty();
   const src = activeLoan();
   const L = JSON.parse(JSON.stringify(src)); // clone active loan as a starting point
   L.name = loanName(state.loans.length);
@@ -87,6 +113,7 @@ function addLoan() {
 
 function removeLoan(i) {
   if (state.loans.length <= 1) return;
+  markDirty();
   state.loans.splice(i, 1);
   state.loans.forEach((L, j) => { L.name = loanName(j); });
   if (state.activeIndex >= state.loans.length) state.activeIndex = state.loans.length - 1;
@@ -253,12 +280,22 @@ function render() {
   scheduleHashUpdate();
 }
 
+// Track whether the user has touched anything. A pristine single-default loan
+// leaves the URL bare (reset restores this); any real interaction starts
+// encoding state into the hash so it stays shareable.
+let dirty = false;
+function markDirty() { dirty = true; }
+
 // debounce hash writes
 let hashTimer = null;
 function scheduleHashUpdate() {
   clearTimeout(hashTimer);
   hashTimer = setTimeout(() => {
-    writeHash(encodeState(state.loans, state.activeIndex, state.bounds));
+    if (dirty) {
+      writeHash(encodeState(state.loans, state.activeIndex, state.bounds));
+    } else {
+      history.replaceState(null, "", location.pathname + location.search);
+    }
   }, 250);
 }
 
@@ -275,6 +312,10 @@ function setBasicFromInput(key, raw) {
 }
 
 function wire() {
+  // any field edit (input/change on a form control) makes the state shareable
+  document.addEventListener("input", markDirty);
+  document.addEventListener("change", markDirty);
+
   ["price", "loan", "dp"].forEach((key) => {
     $(key).addEventListener("input", (e) => { setBasicFromInput(key, e.target.value); render(); });
     $(key).addEventListener("blur", render);
@@ -342,6 +383,14 @@ function wire() {
     const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const next = cur ? (cur === "dark" ? "light" : "dark") : (sysDark ? "light" : "dark");
     root.setAttribute("data-theme", next);
+    render();
+  });
+
+  // reset to defaults (also clears the shared-comparison hash)
+  $("reset").addEventListener("click", () => {
+    loadDefaults();
+    dirty = false;
+    history.replaceState(null, "", location.pathname + location.search);
     render();
   });
 
