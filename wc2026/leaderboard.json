@@ -1,14 +1,24 @@
 {
-  "updatedAt": "2026-07-12T12:11:10Z",
-  "resultsCount": 28,
+  "updatedAt": "2026-07-15T02:31:31Z",
+  "resultsCount": 29,
   "thirdDecided": false,
   "entries": [
+    {
+      "user": "Sam",
+      "bid": "mqykcjzr9z3d",
+      "score": 40,
+      "correct": 20,
+      "maxPossible": 40,
+      "finalPick": "BRA beats ESP",
+      "thirdCorrect": 0,
+      "submittedAt": "2026-06-29T01:52:58.936Z"
+    },
     {
       "user": "Nick",
       "bid": "mqz351y18631",
       "score": 35,
       "correct": 21,
-      "maxPossible": 67,
+      "maxPossible": 43,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:40:00.069Z"
@@ -18,7 +28,7 @@
       "bid": "mqyh5otw1y1g",
       "score": 34,
       "correct": 19,
-      "maxPossible": 58,
+      "maxPossible": 34,
       "finalPick": "FRA beats NOR",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T01:57:03.854Z"
@@ -28,20 +38,10 @@
       "bid": "mqz3gxmxcq9c",
       "score": 34,
       "correct": 20,
-      "maxPossible": 66,
+      "maxPossible": 42,
       "finalPick": "FRA beats ARG",
       "thirdCorrect": 0,
       "submittedAt": "2026-06-29T10:48:15.954Z"
-    },
-    {
-      "user": "Sam",
-      "bid": "mqykcjzr9z3d",
-      "score": 32,
-      "correct": 19,
-      "maxPossible": 40,
-      "finalPick": "BRA beats ESP",
-      "thirdCorrect": 0,
-      "submittedAt": "2026-06-29T01:52:58.936Z"
     },
     {
       "user": "Karen",
