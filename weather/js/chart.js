@@ -93,7 +93,7 @@ const slotH = () => PANEL_H + PANEL_GAP;
 
 // Public. mount = scrolling plot; axisMount = fixed overlay. units = {temp,pres}.
 // Returns geometry used by the hover layer in main.js.
-export function renderChart(mount, records, enabled, axisMount, units = { temp: "C", pres: "hPa" }) {
+export function renderChart(mount, records, enabled, axisMount, units = { temp: "F", pres: "hPa" }) {
   mount.innerHTML = "";
   if (axisMount) axisMount.innerHTML = "";
   if (!records.length) return { width: 0, nowX: 0, panelGeo: [], xToTime: null };

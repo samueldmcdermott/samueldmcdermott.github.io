@@ -9,11 +9,12 @@ import { airQuality, aqiCategory } from "./airnow.js";
 import { wetBulb, vaporPressure, saturationVaporPressure, cToF, hPaToInHg } from "./physics.js";
 import * as store from "./store.js";
 import { renderChart, FIELDS, AXIS_W } from "./chart.js";
+import { daySummary, renderSummary } from "./summary.js";
 
 const $ = (id) => document.getElementById(id);
 // Session-only defaults (not persisted). Only the location is kept — in the URL.
 let enabled = ["temperature", "cloudCover", "precip", "pressure", "dewPoint", "aqi"];
-let units = { temp: "C", pres: "hPa" };
+let units = { temp: "F", pres: "hPa" };
 let currentRecords = [];
 let chartInfo = null; // geometry returned by renderChart, for the hover layer
 
@@ -103,6 +104,15 @@ function mergeAll({ omRecords, nwsForecast, observed, airSeries }) {
 function draw() {
   chartInfo = renderChart($("chart"), currentRecords, enabled, $("chartAxis"), units);
   hideTip();
+}
+
+// Daily-summary hero for today. Always in °F per spec.
+function drawHero() {
+  const hero = $("hero");
+  const s = daySummary(currentRecords);
+  if (!s) { hero.hidden = true; return; }
+  hero.innerHTML = renderSummary(s);
+  hero.hidden = false;
 }
 
 // Default & "now" button: open the view at the start of *today* (local
@@ -338,6 +348,7 @@ async function loadLocation(query) {
     if (!currentRecords.length) { status.textContent = "No data returned for this location."; return; }
 
     draw();
+    drawHero();
     requestAnimationFrame(scrollToNow);
     const measuredN = currentRecords.filter((r) => r.measured).length;
     status.textContent = `${currentRecords.length} hourly points · ${measuredN} measured (cached) · forecast to +10 d.`;
