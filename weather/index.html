@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Weather Tracker</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <button class="themebtn" id="themeToggle" type="button" aria-label="Toggle color theme">◐ theme</button>
+    <h1>Weather Tracker</h1>
+    <div class="sub">Ten days back and ten days ahead from NOAA. Past shows measured observations; future shows the forecast. Swipe or drag the chart to scroll through time.</div>
+  </header>
+
+  <!-- ============ SEARCH ============ -->
+  <section class="search">
+    <form id="searchForm" class="search-row" autocomplete="off">
+      <input type="text" id="query" inputmode="text"
+             placeholder="ZIP code, airport code, or city name…"
+             aria-label="Location search">
+      <button type="submit" id="go">Go</button>
+    </form>
+    <div class="sub" id="locLabel">Locating…</div>
+  </section>
+
+  <!-- ============ FIELD TOGGLES ============ -->
+  <section class="fields">
+    <h2 class="section-title">Fields</h2>
+    <div class="field-toggles" id="fieldToggles" role="group" aria-label="Fields to plot"></div>
+  </section>
+
+  <!-- ============ CHART ============ -->
+  <section class="chartsec">
+    <div class="chart-head">
+      <div class="chart-hint sub">Grey band = past (measured). Vertical rule = now.</div>
+      <div class="chart-controls">
+        <div class="unit-toggle" role="group" aria-label="Temperature unit">
+          <button type="button" data-unit="temp" data-val="C">°C</button>
+          <button type="button" data-unit="temp" data-val="F">°F</button>
+        </div>
+        <div class="unit-toggle" role="group" aria-label="Pressure unit">
+          <button type="button" data-unit="pres" data-val="hPa">hPa</button>
+          <button type="button" data-unit="pres" data-val="inHg">inHg</button>
+        </div>
+        <div class="chart-nav">
+          <button type="button" id="scrollLeft" aria-label="Scroll to earlier days">◀</button>
+          <button type="button" id="scrollNow" title="Jump to today">now</button>
+          <button type="button" id="scrollRight" aria-label="Scroll to later days">▶</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-frame">
+      <div class="chart-viewport" id="chartViewport" tabindex="0" aria-label="Weather chart, scrollable">
+        <div id="chart"></div>
+      </div>
+      <!-- fixed overlay (titles + y-ticks + legend): stays put while plot scrolls -->
+      <div class="chart-axis" id="chartAxis" aria-hidden="true"></div>
+      <!-- hover crosshair + tooltip -->
+      <div class="chart-cross" id="chartCross" hidden></div>
+      <div class="chart-tip" id="chartTip" hidden></div>
+    </div>
+    <div class="chart-status sub" id="chartStatus"></div>
+  </section>
+
+  <!-- ============ INFO BOXES ============ -->
+  <section class="boxes">
+    <div class="box" id="moonBox">
+      <h3 class="box-title">Moon</h3>
+      <div class="box-body" id="moonBody">…</div>
+    </div>
+
+    <div class="box" id="airBox">
+      <h3 class="box-title" id="airTitle">Air quality</h3>
+      <div class="box-body" id="airBody">…</div>
+    </div>
+
+    <div class="box" id="oemBox">
+      <h3 class="box-title">Alerts · OEM</h3>
+      <div class="box-body" id="oemBody">…</div>
+    </div>
+  </section>
+
+  <footer class="foot sub">
+    Forecast &amp; observations: <a href="https://www.weather.gov/documentation/services-web-api">NOAA / NWS api.weather.gov</a>.
+    Pressure &amp; gap-fill: <a href="https://open-meteo.com/">Open-Meteo</a>.
+    Air quality: <a href="https://open-meteo.com/en/docs/air-quality-api">Open-Meteo Air Quality</a>
+    (built on the <a href="https://atmosphere.copernicus.eu/">Copernicus CAMS</a> model) —
+    <a href="https://www.airnow.gov/">AirNow.gov</a> (EPA) is linked for its written forecast, and used for the numbers only if a proxy is configured.
+    Geocoding: <a href="https://www.zippopotam.us/">Zippopotam</a> / Open-Meteo.
+    Not affiliated with any of them. Values are estimates — do not use for safety-critical decisions.
+  </footer>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
