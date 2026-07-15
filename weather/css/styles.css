@@ -178,9 +178,12 @@ a{color:var(--accent-line)}
 .now-rule{stroke:var(--accent-line);stroke-width:1.5;stroke-dasharray:4 3}
 .now-txt{fill:var(--accent-line);font-size:10px;font-weight:600}
 .past-shade{fill:var(--past)}
+/* AQI reference lines */
+.aqi-ref-50{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;opacity:.7}
+.aqi-ref-100{stroke:var(--ink-2);stroke-width:2}
 .series-line{fill:none;stroke-width:1.75}
-.series-line.past{stroke-dasharray:none}
-.series-line.future{stroke-dasharray:none}
+/* NB: do not set stroke-dasharray here — a CSS value overrides the per-series
+   inline dash attribute set in chart.js, flattening every line to solid. */
 .series-dot{stroke:var(--surface);stroke-width:1}
 .legend-txt{fill:var(--ink-2);font-size:10.5px}
 .legend-swatch{stroke-width:2.5}

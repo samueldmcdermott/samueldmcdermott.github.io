@@ -100,20 +100,21 @@ function mergeAll({ omRecords, nwsForecast, observed, airSeries }) {
 })();
 
 // ---------- chart draw + scroll wiring ----------
-let lastNowX = 0;
 function draw() {
   chartInfo = renderChart($("chart"), currentRecords, enabled, $("chartAxis"), units);
-  lastNowX = chartInfo.nowX;
   hideTip();
 }
 
-// Default & "now" button: put today near the LEFT edge so the view opens on
-// today + the future. A small inset keeps "now" clear of the fixed y-axis.
+// Default & "now" button: open the view at the start of *today* (local
+// midnight) on the left, so today + the future are in view. A small inset keeps
+// that edge clear of the fixed y-axis overlay.
 function scrollToNow() {
   const vp = $("chartViewport");
-  if (!vp.querySelector("svg")) return;
+  if (!vp.querySelector("svg") || !chartInfo?.xOf) return;
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0); // today, local midnight
   const inset = 56; // px in from the left (past the y-axis overlay)
-  vp.scrollLeft = Math.max(0, lastNowX - inset);
+  vp.scrollLeft = Math.max(0, chartInfo.xOf(midnight.toISOString()) - inset);
 }
 
 let dragging = false; // shared so hover doesn't fight a drag-scroll
@@ -159,47 +160,65 @@ function fmtVal(key, v) {
     default: return `${Math.round(v)} µg/m³`; // pollutant concentrations
   }
 }
-(function hover() {
+// Show the tooltip + crosshair for the record nearest to a client x/y. Shared by
+// desktop hover (pointermove) and mobile tap-to-inspect (pointerup w/o drag).
+function showTipAt(clientX, clientY) {
   const vp = $("chartViewport"), tip = $("chartTip"), cross = $("chartCross");
+  if (!chartInfo || !currentRecords.length) return;
+  const rect = vp.getBoundingClientRect();
+  // x within the SVG coordinate space = viewport x + how far we've scrolled
+  const svgX = clientX - rect.left + vp.scrollLeft;
+  if (svgX < chartInfo.originX) { hideTip(); return; }
+  // nearest record by time
+  const time = chartInfo.xToTime(svgX);
+  let rec = null, best = Infinity;
+  for (const r of currentRecords) {
+    const dt = Math.abs(new Date(r.t).getTime() - time.getTime());
+    if (dt < best) { best = dt; rec = r; }
+  }
+  if (!rec || best > 90 * 60 * 1000) { hideTip(); return; } // >90min away: gap
+  // crosshair at the record's x, in viewport (client) coords
+  const recX = chartInfo.xOf(rec.t) - vp.scrollLeft;
+  cross.style.left = `${recX}px`; cross.hidden = false;
+  // tooltip content: only the ENABLED fields that have a value
+  const when = new Date(rec.t).toLocaleString(undefined, { weekday: "short", month: "numeric", day: "numeric", hour: "numeric" });
+  const past = new Date(rec.t).getTime() <= Date.now();
+  let rows = "";
+  for (const f of enabled) {
+    const spec = FIELDS[f];
+    const val = rec[spec.key];
+    if (val == null || !Number.isFinite(val)) continue;
+    rows += `<div class="tip-row"><span class="tip-k"><span class="tip-dot" style="background:${spec.color}"></span>${spec.label}</span><span>${fmtVal(spec.key, val)}</span></div>`;
+  }
+  if (!rows) { hideTip(); return; }
+  tip.innerHTML = `<div class="tip-t">${when}${past ? " · measured/past" : ""}</div>${rows}`;
+  tip.hidden = false;
+  // position the tip near the point but keep it inside the frame
+  const frame = vp.parentElement.getBoundingClientRect();
+  let tx = recX + 14;
+  if (tx + tip.offsetWidth > frame.width - 6) tx = recX - tip.offsetWidth - 14;
+  tip.style.left = `${Math.max(6, tx)}px`;
+  tip.style.top = `${Math.min(clientY - rect.top + 8, frame.height - tip.offsetHeight - 6)}px`;
+}
+
+(function hover() {
+  const vp = $("chartViewport");
+  // Desktop: continuous hover via a real (mouse/pen) pointer.
   vp.addEventListener("pointermove", (e) => {
-    if (dragging || !chartInfo || !currentRecords.length) return;
-    const rect = vp.getBoundingClientRect();
-    // x within the SVG coordinate space = viewport x + how far we've scrolled
-    const svgX = e.clientX - rect.left + vp.scrollLeft;
-    if (svgX < chartInfo.originX) { hideTip(); return; }
-    // nearest record by time
-    const time = chartInfo.xToTime(svgX);
-    const key = new Date(time).toISOString().slice(0, 13) + ":00:00Z";
-    let rec = null, best = Infinity;
-    for (const r of currentRecords) {
-      const dt = Math.abs(new Date(r.t).getTime() - time.getTime());
-      if (dt < best) { best = dt; rec = r; }
-    }
-    if (!rec || best > 90 * 60 * 1000) { hideTip(); return; } // >90min away: gap
-    // crosshair at the record's x, in viewport (client) coords
-    const recX = chartInfo.xOf(rec.t) - vp.scrollLeft;
-    cross.style.left = `${recX}px`; cross.hidden = false;
-    // tooltip content: only the ENABLED fields that have a value
-    const when = new Date(rec.t).toLocaleString(undefined, { weekday: "short", month: "numeric", day: "numeric", hour: "numeric" });
-    const past = new Date(rec.t).getTime() <= Date.now();
-    let rows = "";
-    for (const f of enabled) {
-      const spec = FIELDS[f];
-      const val = rec[spec.key];
-      if (val == null || !Number.isFinite(val)) continue;
-      rows += `<div class="tip-row"><span class="tip-k"><span class="tip-dot" style="background:${spec.color}"></span>${spec.label}</span><span>${fmtVal(spec.key, val)}</span></div>`;
-    }
-    if (!rows) { hideTip(); return; }
-    tip.innerHTML = `<div class="tip-t">${when}${past ? " · measured/past" : ""}</div>${rows}`;
-    tip.hidden = false;
-    // position the tip near the cursor but keep it inside the frame
-    const frame = vp.parentElement.getBoundingClientRect();
-    let tx = recX + 14;
-    if (tx + tip.offsetWidth > frame.width - 6) tx = recX - tip.offsetWidth - 14;
-    tip.style.left = `${Math.max(6, tx)}px`;
-    tip.style.top = `${Math.min(e.clientY - rect.top + 8, frame.height - tip.offsetHeight - 6)}px`;
+    if (dragging || e.pointerType === "touch") return; // touch handled by tap below
+    showTipAt(e.clientX, e.clientY);
   });
-  vp.addEventListener("pointerleave", hideTip);
+  vp.addEventListener("pointerleave", (e) => {
+    if (e.pointerType !== "touch") hideTip(); // keep a tapped tip visible on mobile
+  });
+  // Mobile: tap-to-inspect. A touch that ended without scrolling (didn't move)
+  // is a tap -> show the values at that point; the tip stays until the next tap
+  // or scroll. `dragging` is set true by scrollNav once a drag/scroll begins.
+  vp.addEventListener("pointerup", (e) => {
+    if (e.pointerType !== "touch") return;
+    if (dragging) { hideTip(); return; } // was a scroll, not a tap
+    showTipAt(e.clientX, e.clientY);
+  });
 })();
 
 // ---------- info boxes ----------

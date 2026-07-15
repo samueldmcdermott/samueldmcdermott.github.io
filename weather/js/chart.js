@@ -20,31 +20,42 @@ const PLOT_L = AXIS_W + 6; // plot content starts right of the overlay so it's
                            // never hidden behind the sticky gutter at scroll 0
 const PAD = { r: 16, t: 22, b: 34 };
 
-// Field registry. Each field: panel, label, distinct color, record key, unit
-// family (for conversion), optional dash. Air fields read from merged records.
+// Field registry. Each field: panel, label, record key, unit family (for
+// conversion), optional dash. Colors are assigned below as ONE running sequence
+// through the palette (see COLOR_CYCLE), so the palette doesn't restart at every
+// panel — colors may repeat across panels, but stay distinct within each panel.
 export const FIELDS = {
-  temperature: { panel: "temp",  label: "Temperature",      color: "var(--c-1)", key: "tempC",    fam: "temp", default: true },
-  dewPoint:    { panel: "temp",  label: "Dew point",        color: "var(--c-2)", key: "dewC",     fam: "temp", default: true },
-  wetBulb:     { panel: "temp",  label: "Wet-bulb",         color: "var(--c-6)", key: "wetBulbC", fam: "temp", dash: "5 4" },
-  cloudCover:  { panel: "pct",   label: "Cloud cover",      color: "var(--c-3)", key: "cloud",    fam: "pct",  default: true },
-  precip:      { panel: "pct",   label: "Precip chance",    color: "var(--c-7)", key: "precip",   fam: "pct",  default: true, dash: "2 3" },
-  humidity:    { panel: "pct",   label: "Rel. humidity",    color: "var(--c-8)", key: "rh",       fam: "pct",  dash: "5 4" },
-  pressure:    { panel: "pres",  label: "Barometric pressure", color: "var(--c-4)", key: "pressure", fam: "pres", default: true },
-  vaporPressure:{panel: "vapor", label: "Vapor pressure",   color: "var(--c-5)", key: "vaporP",   fam: "pres" },
-  satVapor:    { panel: "vapor", label: "Sat. vapor pressure", color: "var(--c-8)", key: "satVaporP", fam: "pres", dash: "5 4" },
+  temperature: { panel: "temp",  label: "Temperature",      key: "tempC",    fam: "temp", default: true },
+  dewPoint:    { panel: "temp",  label: "Dew point",        key: "dewC",     fam: "temp", default: true },
+  wetBulb:     { panel: "temp",  label: "Wet-bulb",         key: "wetBulbC", fam: "temp", dash: "5 4" },
+  cloudCover:  { panel: "pct",   label: "Cloud cover",      key: "cloud",    fam: "pct",  default: true },
+  precip:      { panel: "pct",   label: "Precip chance",    key: "precip",   fam: "pct",  default: true, dash: "2 3" },
+  humidity:    { panel: "pct",   label: "Rel. humidity",    key: "rh",       fam: "pct",  dash: "5 4" },
+  pressure:    { panel: "pres",  label: "Barometric pressure", key: "pressure", fam: "pres", default: true },
+  vaporPressure:{panel: "vapor", label: "Vapor pressure",   key: "vaporP",   fam: "pres" },
+  satVapor:    { panel: "vapor", label: "Sat. vapor pressure", key: "satVaporP", fam: "pres", dash: "5 4" },
   // Air-quality index panel (0–500, all same units). AQI is the max envelope of
   // the four sub-indices, so they legitimately share one plot.
-  aqi:         { panel: "aqi",   label: "US AQI (overall)", color: "var(--c-4)", key: "aqi",      fam: "aqi",  default: true },
-  aqiPm25:     { panel: "aqi",   label: "AQI · PM2.5",      color: "var(--c-2)", key: "aqiPm25",  fam: "aqi",  dash: "5 4" },
-  aqiPm10:     { panel: "aqi",   label: "AQI · PM10",       color: "var(--c-7)", key: "aqiPm10",  fam: "aqi",  dash: "5 4" },
-  aqiOzone:    { panel: "aqi",   label: "AQI · Ozone",      color: "var(--c-3)", key: "aqiOzone", fam: "aqi",  dash: "5 4" },
-  aqiNo2:      { panel: "aqi",   label: "AQI · NO₂",        color: "var(--c-8)", key: "aqiNo2",   fam: "aqi",  dash: "5 4" },
+  aqi:         { panel: "aqi",   label: "US AQI (overall)", key: "aqi",      fam: "aqi",  default: true },
+  aqiPm25:     { panel: "aqi",   label: "AQI · PM2.5",      key: "aqiPm25",  fam: "aqi",  dash: "5 4" },
+  aqiPm10:     { panel: "aqi",   label: "AQI · PM10",       key: "aqiPm10",  fam: "aqi",  dash: "5 4" },
+  aqiOzone:    { panel: "aqi",   label: "AQI · Ozone",      key: "aqiOzone", fam: "aqi",  dash: "5 4" },
+  aqiNo2:      { panel: "aqi",   label: "AQI · NO₂",        key: "aqiNo2",   fam: "aqi",  dash: "5 4" },
   // Raw concentrations panel (µg/m³) — a physically different scale.
-  pm25:        { panel: "poll",  label: "PM2.5",            color: "var(--c-2)", key: "pm25",     fam: "conc" },
-  pm10:        { panel: "poll",  label: "PM10",             color: "var(--c-7)", key: "pm10",     fam: "conc" },
-  ozone:       { panel: "poll",  label: "Ozone",            color: "var(--c-3)", key: "ozone",    fam: "conc" },
-  no2:         { panel: "poll",  label: "NO₂",              color: "var(--c-8)", key: "no2",      fam: "conc" },
+  pm25:        { panel: "poll",  label: "PM2.5",            key: "pm25",     fam: "conc" },
+  pm10:        { panel: "poll",  label: "PM10",             key: "pm10",     fam: "conc" },
+  ozone:       { panel: "poll",  label: "Ozone",            key: "ozone",    fam: "conc" },
+  no2:         { panel: "poll",  label: "NO₂",              key: "no2",      fam: "conc" },
 };
+
+// Assign colors as a single continuous walk through the 8-color palette across
+// the whole registry (in declaration order), rather than restarting per panel.
+// With ≤5 fields per panel and 8 colors, this keeps every panel internally
+// distinct while giving a pleasing progression instead of lockstep repeats.
+const COLOR_CYCLE = 8; // --c-1 .. --c-8
+Object.values(FIELDS).forEach((spec, i) => {
+  spec.color = `var(--c-${(i % COLOR_CYCLE) + 1})`;
+});
 
 // Panel titles are unit-aware (temp/pres depend on the toggle).
 function panelTitle(panelKey, units) {
@@ -117,7 +128,9 @@ export function renderChart(mount, records, enabled, axisMount, units = { temp: 
     if (lo === hi) { lo -= 1; hi += 1; }
     const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
     if (panelKey === "pct") { lo = 0; hi = 100; }
-    if (panelKey === "aqi") { lo = 0; hi = Math.max(hi, 50); }
+    // AQI: pin to 0 and always show at least up to 100, so the Good/Moderate/
+    // Unhealthy-for-Sensitive reference lines (50, 100) are always visible.
+    if (panelKey === "aqi") { lo = 0; hi = Math.max(hi, 100); }
     const yOf = (v) => top + PANEL_H - ((v - lo) / (hi - lo)) * PANEL_H;
     return { panelKey, top, fieldsHere, lo, hi, yOf, title: panelTitle(panelKey, units) };
   });
@@ -143,6 +156,16 @@ export function renderChart(mount, records, enabled, axisMount, units = { temp: 
       const v = g.lo + ((g.hi - g.lo) * k) / 2;
       const y = g.yOf(v);
       if (k !== 0 && k !== 2) svg.appendChild(el("line", { class: "grid-line", x1: box.x, y1: y, x2: box.x + box.w, y2: y }));
+    }
+
+    // AQI reference lines: 50 (Good→Moderate, dotted gray) and 100
+    // (Moderate→Unhealthy for Sensitive, thick). Drawn under the series.
+    if (g.panelKey === "aqi") {
+      for (const ref of [{ v: 50, cls: "aqi-ref-50" }, { v: 100, cls: "aqi-ref-100" }]) {
+        if (ref.v > g.hi) continue;
+        const y = g.yOf(ref.v);
+        svg.appendChild(el("line", { class: ref.cls, x1: box.x, y1: y, x2: box.x + box.w, y2: y }));
+      }
     }
 
     // series
