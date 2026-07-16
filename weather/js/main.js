@@ -170,6 +170,19 @@ function dayBounds() {
 // Latest official AirNow current AQI, set by drawAir (null until it loads).
 let officialAqi = null;
 
+// The Current-box "details" link smooth-scrolls to (and briefly highlights) the
+// Air-quality box, instead of an abrupt hash jump.
+$("current").addEventListener("click", (e) => {
+  const link = e.target.closest("[data-scroll]");
+  if (!link) return;
+  e.preventDefault();
+  const target = $(link.dataset.scroll);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  target.classList.add("flash");
+  setTimeout(() => target.classList.remove("flash"), 1200);
+});
+
 // "Current" readout (always now) + daily-summary hero for `selectedDay`.
 function drawHero() {
   const cur = $("current");
@@ -387,7 +400,7 @@ async function drawAir(lat, lon) {
     // Daily forecast (may be multiple days / pollutants; show the action day or first).
     const fc = (q.forecasts || []).find((f) => f.ActionDay) || q.forecasts?.[0];
     const fcHtml = fc
-      ? `<div class="note"><b>Forecast ${fc.DateForecast?.trim()}</b> — ${fc.ParameterName} AQI ${fc.AQI >= 0 ? fc.AQI : "—"} (${fc.Category?.Name || ""})${fc.ActionDay ? " · <b>Action Day</b>" : ""}${fc.Discussion ? "<br>" + fc.Discussion : ""}</div>`
+      ? `<div class="note"><b>Forecast ${fc.DateForecast?.trim()}</b> — ${fc.ParameterName} AQI ${fc.AQI >= 0 ? fc.AQI : "—"} (${fc.Category?.Name || ""})${fc.ActionDay ? " · <b>Action Day</b>" : ""}${collapsibleProse(fc.Discussion)}</div>`
       : "";
     body.innerHTML = (head + rows || `<div class="loading">No current readings for this area.</div>`) +
       fcHtml + `<div class="note">Source: EPA AirNow. ${link}</div>`;
@@ -405,6 +418,36 @@ function fmtAirNowHour(o) {
   const h12 = ((h + 11) % 12) + 1;
   return `${h12} ${ampm}`;
 }
+
+// AirNow forecast discussions can run several paragraphs. Show a short preview
+// with a "show more"/"show less" toggle (handled by the delegated click below).
+const PROSE_PREVIEW = 160; // chars before truncating at a word boundary
+function collapsibleProse(text) {
+  const s = (text || "").trim();
+  if (!s) return "";
+  if (s.length <= PROSE_PREVIEW) return `<br>${escapeHtml(s)}`;
+  let cut = s.lastIndexOf(" ", PROSE_PREVIEW);
+  if (cut < PROSE_PREVIEW * 0.6) cut = PROSE_PREVIEW; // avoid a too-short preview
+  const preview = escapeHtml(s.slice(0, cut).trimEnd());
+  const rest = escapeHtml(s.slice(cut).trimStart());
+  return `<br><span class="prose">` +
+    `<span class="prose-preview">${preview}… <button type="button" class="prose-toggle" data-prose="more">show more</button></span>` +
+    `<span class="prose-full" hidden>${preview} ${rest} <button type="button" class="prose-toggle" data-prose="less">show less</button></span>` +
+    `</span>`;
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+// Delegated toggle: swap preview <-> full within the same .prose block.
+$("airBody").addEventListener("click", (e) => {
+  const btn = e.target.closest(".prose-toggle");
+  if (!btn) return;
+  const prose = btn.closest(".prose");
+  if (!prose) return;
+  const showFull = btn.dataset.prose === "more";
+  prose.querySelector(".prose-preview").hidden = showFull;
+  prose.querySelector(".prose-full").hidden = !showFull;
+});
 
 async function drawAlerts(lat, lon) {
   const body = $("oemBody");

@@ -139,11 +139,23 @@ export function renderCurrent(c) {
   if (!c) return "";
   const cell = (k, v) => `<div class="cur-cell"><div class="cur-k">${k}</div><div class="cur-v">${v}</div></div>`;
   const nowTime = new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
+  // AQI cell: value + severity symbol (🔴 >100, 🟡 80–100) + a "details" link
+  // that scrolls down to the full Air-quality box.
+  let aqiVal = "—";
+  if (c.aqi != null) {
+    const n = Math.round(c.aqi);
+    let warn = "";
+    if (n > 100) warn = ` <span class="cur-warn" title="Unhealthy for sensitive groups or worse">🔴</span>`;
+    else if (n >= 80) warn = ` <span class="cur-warn" title="Approaching unhealthy">🟡</span>`;
+    aqiVal = `${n}${warn}<a href="#airBox" class="cur-details" data-scroll="airBox">details</a>`;
+  }
+
   return `<div class="cur-title">At ${nowTime}</div>
   <div class="cur-row">
     ${cell("Temperature", c.tempF != null ? fmtF(c.tempF) : "—")}
     ${cell("Dew point", c.dewF != null ? fmtF(c.dewF) : "—")}
-    ${cell("AQI", c.aqi != null ? Math.round(c.aqi) : "—")}
+    ${cell("AQI", aqiVal)}
   </div>`;
 }
 
