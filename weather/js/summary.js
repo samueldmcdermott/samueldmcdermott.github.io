@@ -130,12 +130,24 @@ export function daySummary(records, dayDate = new Date()) {
     };
   }
 
-  // AQI: max + time
+  // AQI: max + time, plus any contiguous stretches exceeding 100.
   const aqis = nonNull(day, "aqi");
-  const aqi = aqis.length
-    ? (() => { const mx = extremum(aqis, "aqi", (v, b) => v > b);
-        return { max: mx.aqi, at: hourLabel(mx), spark: spark(aqis, "aqi") }; })()
-    : null;
+  let aqi = null;
+  if (aqis.length) {
+    const mx = extremum(aqis, "aqi", (v, b) => v > b);
+    // contiguous runs where AQI > 100 -> {from, to} hour labels
+    const over100 = [];
+    let run = null;
+    for (let i = 0; i < aqis.length; i++) {
+      const over = aqis[i].aqi > 100;
+      if (over) run = run ? { start: run.start, end: aqis[i] } : { start: aqis[i], end: aqis[i] };
+      if ((!over || i === aqis.length - 1) && run) { over100.push(run); run = null; }
+    }
+    aqi = {
+      max: mx.aqi, at: hourLabel(mx), spark: spark(aqis, "aqi"),
+      over100: over100.map((r) => ({ from: hourLabel(r.start), to: hourLabel(r.end) })),
+    };
+  }
 
   return { dateLabel, today, temperature, precipitation, dew, aqi };
 }
@@ -211,10 +223,17 @@ export function renderSummary(s) {
     ));
   }
 
-  // AQI: max + time. Scale mirrors the chart panel: 0 to at least 100, and when
-  // it exceeds 100, draw a reference line at 100 with hatched exceedance bands.
+  // AQI: max + time, plus any >100 stretches. Scale mirrors the chart panel:
+  // 0 to at least 100, with a reference line + hatched bands when it exceeds 100.
   if (s.aqi) {
-    tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, `max at ${s.aqi.at}`, s.aqi.spark,
+    let aqiSub = `max at ${s.aqi.at}`;
+    if (s.aqi.over100 && s.aqi.over100.length) {
+      const spans = s.aqi.over100
+        .map((r) => (r.from === r.to ? r.from : `${r.from}–${r.to}`))
+        .join(", ");
+      aqiSub += ` · &gt;100: ${spans}`;
+    }
+    tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, aqiSub, s.aqi.spark,
       { min: 0, max: Math.max(100, s.aqi.max), refLine: 100 }));
   }
 
@@ -264,9 +283,11 @@ export function sparkline(values, opts = {}, w = 200, h = 56) {
     defs = `<defs><pattern id="${uid}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="5" stroke="var(--spark)" stroke-width="0.8"/>
     </pattern></defs>`;
+    // Bands span the FULL plot height (top pad down to bottom pad), marking the
+    // whole time-column where AQI exceeds the reference — not just above the line.
     const rects = bands.map(([a, b]) => {
       const x = xAt(a), wBand = xAt(b) - xAt(a);
-      return `<rect x="${x.toFixed(1)}" y="${pad}" width="${wBand.toFixed(1)}" height="${(yRef - pad).toFixed(1)}" fill="url(#${uid})"/>`;
+      return `<rect x="${x.toFixed(1)}" y="${pad}" width="${wBand.toFixed(1)}" height="${yh.toFixed(1)}" fill="url(#${uid})"/>`;
     }).join("");
     refSvg = `${rects}<line x1="${pad}" y1="${yRef.toFixed(1)}" x2="${(w - pad).toFixed(1)}" y2="${yRef.toFixed(1)}" stroke="var(--spark)" stroke-width="1" stroke-dasharray="2 2"/>`;
   }
