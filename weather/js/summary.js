@@ -61,13 +61,21 @@ function spark(recs, key, toF = false) {
   return nonNull(recs, key).map((r) => (toF ? cToF(r[key]) : r[key]));
 }
 
-// ---- full day summary object ----
-export function daySummary(records) {
-  const day = recordsForDay(records);
+// True if `d` is the local calendar today.
+export function isToday(d) {
+  const n = new Date();
+  return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+}
+
+// ---- full day summary object for a given local day (default: today) ----
+export function daySummary(records, dayDate = new Date()) {
+  const day = recordsForDay(records, dayDate);
   const temps = nonNull(day, "tempC");
   if (temps.length < 2) return null;
 
-  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const today = isToday(dayDate);
+  const dateLabel = dayDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+    + (today ? " · Today" : "");
 
   // temperature: AM low, day high, PM low
   const high = extremum(temps, "tempC", (v, b) => v > b);
@@ -112,8 +120,9 @@ export function daySummary(records) {
     const mean = deltas.reduce((a, b) => a + b, 0) / (deltas.length || 1);
     const sd = Math.sqrt(deltas.reduce((a, b) => a + (b - mean) ** 2, 0) / (deltas.length || 1));
     const gradual = trend === "stable" || maxAbs <= mean + 2 * sd + 0.01;
+    const nowDew = today && nearestNow(records, "dewC") ? cToF(nearestNow(records, "dewC").dewC) : null;
     dew = {
-      current: nearestNow(records, "dewC") ? cToF(nearestNow(records, "dewC").dewC) : null,
+      current: nowDew, // only meaningful for today
       lo: dLo, hi: dHi, spread: dHi - dLo,
       trend, gradual,
       sharpAt: gradual ? null : (sharp ? hourLabel(sharp) : null),
@@ -128,7 +137,7 @@ export function daySummary(records) {
         return { max: mx.aqi, at: hourLabel(mx), spark: spark(aqis, "aqi") }; })()
     : null;
 
-  return { dateLabel, temperature, precipitation, dew, aqi };
+  return { dateLabel, today, temperature, precipitation, dew, aqi };
 }
 
 const fmtF = (f) => `${Math.round(f)}°F`;
@@ -138,7 +147,7 @@ export function renderCurrent(c) {
   if (!c) return "";
   const cell = (k, v) => `<div class="cur-cell"><div class="cur-k">${k}</div><div class="cur-v">${v}</div></div>`;
   const nowTime = new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return `<div class="cur-title">At ${nowTime}, readings</div>
+  return `<div class="cur-title">At ${nowTime}</div>
   <div class="cur-row">
     ${cell("Temperature", c.tempF != null ? fmtF(c.tempF) : "—")}
     ${cell("Dew point", c.dewF != null ? fmtF(c.dewF) : "—")}
@@ -205,7 +214,13 @@ export function renderSummary(s) {
     tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, `max at ${s.aqi.at}`, s.aqi.spark));
   }
 
-  return `<div class="hero-date">${s.dateLabel}</div><div class="hero-tiles">${tiles.join("")}</div>`;
+  const nav = `<div class="hero-nav">
+    <button type="button" class="hero-arrow" data-day="prev" aria-label="Previous day">◀</button>
+    <span class="hero-date">${s.dateLabel}</span>
+    <button type="button" class="hero-arrow" data-day="next" aria-label="Next day">▶</button>
+    ${s.today ? "" : `<button type="button" class="hero-today" data-day="today">Today</button>`}
+  </div>`;
+  return `${nav}<div class="hero-tiles">${tiles.join("")}</div>`;
 }
 
 // ---- sparkline: a tiny SVG path, no axes/labels, dashed gray line, for use as

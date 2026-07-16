@@ -9,7 +9,7 @@ import { airQuality, aqiCategory } from "./airnow.js";
 import { wetBulb, vaporPressure, saturationVaporPressure, cToF, hPaToInHg } from "./physics.js";
 import * as store from "./store.js";
 import { renderChart, FIELDS, AXIS_W } from "./chart.js";
-import { daySummary, renderSummary, currentReadout, renderCurrent } from "./summary.js";
+import { daySummary, renderSummary, currentReadout, renderCurrent, isToday } from "./summary.js";
 
 const $ = (id) => document.getElementById(id);
 // Session-only defaults (not persisted). Only the location is kept — in the URL.
@@ -17,6 +17,7 @@ let enabled = ["temperature", "cloudCover", "precip", "pressure", "dewPoint", "a
 let units = { temp: "F", pres: "hPa" };
 let currentRecords = [];
 let chartInfo = null; // geometry returned by renderChart, for the hover layer
+let selectedDay = new Date(); // which local day the summary hero shows
 
 // ---------- theme (same pattern as the other apps) ----------
 (function theme() {
@@ -156,18 +157,63 @@ function draw() {
   hideTip();
 }
 
-// "Current" readout + daily-summary hero for today. Always in °F per spec.
+// midnight (local) of the day containing a record time
+function dayFloor(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+
+// The span of local days that have data, from the records.
+function dayBounds() {
+  if (!currentRecords.length) return null;
+  const first = dayFloor(new Date(currentRecords[0].t));
+  const last = dayFloor(new Date(currentRecords[currentRecords.length - 1].t));
+  return { first, last };
+}
+
+// "Current" readout (always now) + daily-summary hero for `selectedDay`.
 function drawHero() {
   const cur = $("current");
   const c = currentReadout(currentRecords);
   if (c) { cur.innerHTML = renderCurrent(c); cur.hidden = false; } else { cur.hidden = true; }
 
   const hero = $("hero");
-  const s = daySummary(currentRecords);
+  const s = daySummary(currentRecords, selectedDay);
   if (!s) { hero.hidden = true; return; }
   hero.innerHTML = renderSummary(s);
   hero.hidden = false;
 }
+
+// Move the summary to another day, clamped to the available range, then redraw.
+function changeDay(delta) {
+  const b = dayBounds();
+  if (!b) return;
+  let next = delta === "today" ? dayFloor(new Date()) : new Date(selectedDay);
+  if (delta === "prev") next.setDate(next.getDate() - 1);
+  if (delta === "next") next.setDate(next.getDate() + 1);
+  next = dayFloor(next);
+  if (next < b.first) next = b.first;
+  if (next > b.last) next = b.last;
+  selectedDay = next;
+  drawHero();
+}
+
+// Delegated clicks for the hero's day-nav buttons.
+$("hero").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-day]");
+  if (btn) changeDay(btn.dataset.day);
+});
+
+// Swipe left/right on the hero to change day (mobile + trackpad drag).
+(function heroSwipe() {
+  const hero = $("hero");
+  let x0 = null;
+  hero.addEventListener("pointerdown", (e) => { x0 = e.clientX; });
+  hero.addEventListener("pointerup", (e) => {
+    if (x0 == null) return;
+    const dx = e.clientX - x0; x0 = null;
+    if (Math.abs(dx) < 40) return;          // ignore taps / tiny moves
+    if (e.target.closest("[data-day]")) return; // let button clicks handle themselves
+    changeDay(dx < 0 ? "next" : "prev");    // swipe left -> next day
+  });
+})();
 
 // Default & "now" button: open the view at the start of *today* (local
 // midnight) on the left, so today + the future are in view. A small inset keeps
@@ -365,6 +411,7 @@ async function drawAlerts(lat, lon) {
 async function loadLocation(query) {
   const status = $("chartStatus");
   const locLabel = $("locLabel");
+  selectedDay = new Date(); // a fresh location resets the summary to today
   try {
     locLabel.textContent = "Locating…";
     const loc = await geocode(query);
