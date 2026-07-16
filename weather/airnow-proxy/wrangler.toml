@@ -1,0 +1,6 @@
+name = "wx-air"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# The AirNow API key is stored as a secret, NOT here:
+#   npx wrangler secret put AIRNOW_KEY

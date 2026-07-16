@@ -106,11 +106,11 @@ addEventListener("click", (e) => {
 
 // ---------- merge sources into one hourly record map ----------
 // Precedence for each hour/field: measured NWS observation > NWS forecast >
-// Open-Meteo. Pressure only exists in observations + Open-Meteo.
-function mergeAll({ omRecords, nwsForecast, observed, airSeries }) {
+// Open-Meteo. Pressure only exists in observations + Open-Meteo. (AQI is NOT a
+// chart series — it comes from official AirNow and lives only in the Air box.)
+function mergeAll({ omRecords, nwsForecast, observed }) {
   const byT = new Map();
   const WEATHER = ["tempC", "dewC", "rh", "cloud", "precip", "pressure"];
-  const AIR = ["aqi", "aqiPm25", "aqiPm10", "aqiOzone", "aqiNo2", "pm25", "pm10", "ozone", "no2"];
   const put = (rec, keys, { measuredFlag = false } = {}) => {
     const cur = byT.get(rec.t) || { t: rec.t };
     for (const k of keys) {
@@ -126,7 +126,6 @@ function mergeAll({ omRecords, nwsForecast, observed, airSeries }) {
   omRecords.forEach((r) => put(r, WEATHER));
   nwsForecast.forEach((r) => put(r, WEATHER));
   observed.forEach((r) => put(r, WEATHER, { measuredFlag: true }));
-  (airSeries || []).forEach((r) => put(r, AIR)); // air aligns by hour key
 
   const recs = [...byT.values()].sort((a, b) => a.t.localeCompare(b.t));
   // derive physical quantities per hour
@@ -168,10 +167,13 @@ function dayBounds() {
   return { first, last };
 }
 
+// Latest official AirNow current AQI, set by drawAir (null until it loads).
+let officialAqi = null;
+
 // "Current" readout (always now) + daily-summary hero for `selectedDay`.
 function drawHero() {
   const cur = $("current");
-  const c = currentReadout(currentRecords);
+  const c = currentReadout(currentRecords, officialAqi);
   if (c) { cur.innerHTML = renderCurrent(c); cur.hidden = false; } else { cur.hidden = true; }
 
   const hero = $("hero");
@@ -343,54 +345,65 @@ function drawMoon() {
     <div class="kv"><span class="k">Next new</span><span>${m.nextNew.toFixed(1)} d</span></div>`;
 }
 
-// Renders the Air box AND returns the hourly air series (for plotting), so the
-// caller can merge it into the chart records.
+// Renders the Air box from OFFICIAL AirNow (via the proxy). Current AQI +
+// per-pollutant observations + the daily forecast discussion. No chart series.
 async function drawAir(lat, lon) {
   const body = $("airBody");
+  const title = $("airTitle");
   body.innerHTML = `<span class="loading">Loading air quality…</span>`;
   try {
     const q = await airQuality(lat, lon);
-    const title = $("airTitle");
-    // Link to AirNow.gov for its written forecast/prose (regardless of numeric source).
-    const link = `<a href="${q.link}" target="_blank" rel="noopener">Prose forecast at AirNow.gov →</a>`;
+    const link = `<a href="${q.link}" target="_blank" rel="noopener">Full details at AirNow.gov →</a>`;
 
-    // Official AirNow shape (only when a proxy is configured).
-    if (q.source === "AirNow") {
-      if (title) title.textContent = "Air quality · AirNow (EPA)";
-      const rows = (q.observations || []).map((o) => {
-        const c = aqiCategory(o.AQI);
-        return `<div class="kv"><span class="k">${o.ParameterName}</span>
-          <span><span class="aqi-pill" style="background:${c.color}">${o.AQI} ${o.Category?.Name || c.name}</span></span></div>`;
-      });
-      const fc = q.forecasts?.[0];
-      body.innerHTML = (rows.join("") || `<div class="loading">No current readings.</div>`) +
-        (fc ? `<div class="note">Forecast ${fc.DateForecast?.trim()}: ${fc.ParameterName} AQI ${fc.AQI ?? "—"} (${fc.Category?.Name || ""})${fc.Discussion ? "<br>" + fc.Discussion : ""}</div>` : "") +
-        `<div class="note">Numbers &amp; plot: official AirNow.gov (EPA). ${link}</div>`;
-      return q.series || [];
+    // No proxy configured -> explain how to enable official data.
+    if (!q.configured) {
+      if (title) title.textContent = "Air quality · AirNow";
+      body.innerHTML =
+        `<div class="loading">Official EPA AirNow data needs a tiny key-holding proxy
+          (an API key can't be safely embedded in a public page).</div>
+         <div class="note">Deploy the Cloudflare Worker in <code>airnow-proxy/</code> and set
+          <code>AIRNOW_PROXY</code> in <code>js/airnow.js</code> — see
+          <code>AIRNOW_SETUP.md</code>. ${link}</div>`;
+      return;
     }
 
-    // Default: Open-Meteo air quality (CAMS model), NOT AirNow.
-    if (title) title.textContent = "Air quality · Open-Meteo (CAMS)";
-    if (!q.now) { body.innerHTML = `<div class="loading">No air-quality data for this location.</div>`; return []; }
-    const cat = aqiCategory(q.now.aqi);
-    const r1 = (label, v, unit) => v == null ? "" :
-      `<div class="kv"><span class="k">${label}</span><span>${Math.round(v)} ${unit}</span></div>`;
-    const peakCat = aqiCategory(q.peak?.aqi);
-    const peakWhen = q.peak?.t ? new Date(q.peak.t + "Z").toLocaleString(undefined, { weekday: "short", hour: "numeric" }) : "";
-    body.innerHTML =
-      `<div class="big">AQI <span class="aqi-pill" style="background:${cat.color}">${Math.round(q.now.aqi)} ${cat.name}</span></div>` +
-      r1("PM2.5", q.now.pm25, "µg/m³") +
-      r1("PM10", q.now.pm10, "µg/m³") +
-      r1("Ozone", q.now.ozone, "µg/m³") +
-      r1("NO₂", q.now.no2, "µg/m³") +
-      (q.peak ? `<div class="note">Forecast peak: AQI ${Math.round(q.peak.aqi)} (${peakCat.name})${peakWhen ? " around " + peakWhen : ""}.</div>` : "") +
-      `<div class="note">AQI = the <b>max</b> of the per-pollutant sub-indices. Enable the “AQI · …” series to see which pollutant is driving it (ozone typically peaks mid-afternoon; its index lags via an 8-hour average).</div>` +
-      `<div class="note">Source: Open-Meteo (Copernicus CAMS). ${link}</div>`;
-    return q.series || [];
+    if (title) title.textContent = "Air quality · AirNow (EPA)";
+    // Feed the official current AQI into the top "Current" box.
+    if (q.now?.AQI != null) { officialAqi = q.now.AQI; drawHero(); }
+    // Headline: the max-AQI pollutant right now.
+    let head = "";
+    if (q.now) {
+      const c = aqiCategory(q.now.AQI);
+      const when = q.now.HourObserved != null
+        ? ` <span class="k" style="font-weight:400">(as of ${fmtAirNowHour(q.now)})</span>` : "";
+      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>`;
+    }
+    // Per-pollutant current readings.
+    const rows = (q.observations || []).map((o) => {
+      const c = aqiCategory(o.AQI);
+      return `<div class="kv"><span class="k">${o.ParameterName}</span>
+        <span><span class="aqi-pill" style="background:${c.color}">${o.AQI} ${o.Category?.Name || c.name}</span></span></div>`;
+    }).join("");
+    // Daily forecast (may be multiple days / pollutants; show the action day or first).
+    const fc = (q.forecasts || []).find((f) => f.ActionDay) || q.forecasts?.[0];
+    const fcHtml = fc
+      ? `<div class="note"><b>Forecast ${fc.DateForecast?.trim()}</b> — ${fc.ParameterName} AQI ${fc.AQI >= 0 ? fc.AQI : "—"} (${fc.Category?.Name || ""})${fc.ActionDay ? " · <b>Action Day</b>" : ""}${fc.Discussion ? "<br>" + fc.Discussion : ""}</div>`
+      : "";
+    body.innerHTML = (head + rows || `<div class="loading">No current readings for this area.</div>`) +
+      fcHtml + `<div class="note">Source: EPA AirNow. ${link}</div>`;
   } catch (e) {
+    if (title) title.textContent = "Air quality · AirNow";
     body.innerHTML = `<span class="err">Air quality unavailable (${e.message}).</span>`;
-    return [];
   }
+}
+
+// AirNow gives DateObserved + HourObserved (local to the reporting area, 0–23).
+function fmtAirNowHour(o) {
+  const h = o.HourObserved;
+  if (h == null) return o.DateObserved?.trim() || "";
+  const ampm = h < 12 ? "AM" : "PM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12} ${ampm}`;
 }
 
 async function drawAlerts(lat, lon) {
@@ -412,6 +425,7 @@ async function loadLocation(query) {
   const status = $("chartStatus");
   const locLabel = $("locLabel");
   selectedDay = new Date(); // a fresh location resets the summary to today
+  officialAqi = null;        // clear stale AQI until AirNow responds
   try {
     locLabel.textContent = "Locating…";
     const loc = await geocode(query);
@@ -421,8 +435,7 @@ async function loadLocation(query) {
     status.textContent = "Fetching forecast & observations…";
     drawMoon();
     drawAlerts(loc.lat, loc.lon);
-    // Air box + its plottable series load in parallel; merge in when ready.
-    const airPromise = drawAir(loc.lat, loc.lon);
+    drawAir(loc.lat, loc.lon); // official AirNow box; independent of the chart
 
     // Open-Meteo first (fast, always works) so the chart appears quickly.
     const omRecords = await openMeteo(loc.lat, loc.lon).catch(() => []);
@@ -445,7 +458,7 @@ async function loadLocation(query) {
       status.textContent = `NWS unavailable (${e.message}); showing Open-Meteo only.`;
     }
 
-    currentRecords = mergeAll({ omRecords, nwsForecast, observed, airSeries: [] });
+    currentRecords = mergeAll({ omRecords, nwsForecast, observed });
     if (!currentRecords.length) { status.textContent = "No data returned for this location."; return; }
 
     draw();
@@ -453,17 +466,6 @@ async function loadLocation(query) {
     requestAnimationFrame(scrollToNow);
     const measuredN = currentRecords.filter((r) => r.measured).length;
     status.textContent = `${currentRecords.length} hourly points · ${measuredN} measured (cached) · forecast to +10 d.`;
-
-    // When air quality arrives, fold it in and redraw (keeps scroll position).
-    // Re-run the hero too so the Current AQI + AQI tile fill in.
-    const airSeries = await airPromise.catch(() => []);
-    if (airSeries.length) {
-      const vp = $("chartViewport"); const keepLeft = vp.scrollLeft;
-      currentRecords = mergeAll({ omRecords, nwsForecast, observed, airSeries });
-      draw();
-      drawHero();
-      vp.scrollLeft = keepLeft;
-    }
   } catch (e) {
     locLabel.innerHTML = `<span class="err">${e.message}</span>`;
     status.textContent = "";

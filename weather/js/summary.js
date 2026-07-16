@@ -42,16 +42,16 @@ function extremum(recs, key, pick) {
   return best;
 }
 
-// ---- CURRENT readout (temp / dew / AQI right now) ----
-export function currentReadout(records) {
+// ---- CURRENT readout (temp / dew now from records; AQI passed in from the
+// official AirNow box, since AQI isn't a chart series). ----
+export function currentReadout(records, officialAqi = null) {
   const t = nearestNow(records, "tempC");
   const d = nearestNow(records, "dewC");
-  const a = nearestNow(records, "aqi");
-  if (!t && !d && !a) return null;
+  if (!t && !d && officialAqi == null) return null;
   return {
     tempF: t ? cToF(t.tempC) : null,
     dewF: d ? cToF(d.dewC) : null,
-    aqi: a ? a.aqi : null,
+    aqi: officialAqi,
     at: t ? hourLabel(t) : (d ? hourLabel(d) : null),
   };
 }
@@ -128,26 +128,8 @@ export function daySummary(records, dayDate = new Date()) {
     };
   }
 
-  // AQI: max + time, plus any contiguous stretches exceeding 100.
-  const aqis = nonNull(day, "aqi");
-  let aqi = null;
-  if (aqis.length) {
-    const mx = extremum(aqis, "aqi", (v, b) => v > b);
-    // contiguous runs where AQI > 100 -> {from, to} hour labels
-    const over100 = [];
-    let run = null;
-    for (let i = 0; i < aqis.length; i++) {
-      const over = aqis[i].aqi > 100;
-      if (over) run = run ? { start: run.start, end: aqis[i] } : { start: aqis[i], end: aqis[i] };
-      if ((!over || i === aqis.length - 1) && run) { over100.push(run); run = null; }
-    }
-    aqi = {
-      max: mx.aqi, at: hourLabel(mx), spark: spark(aqis, "aqi"),
-      over100: over100.map((r) => ({ from: hourLabel(r.start), to: hourLabel(r.end) })),
-    };
-  }
-
-  return { dateLabel, today, temperature, precipitation, dew, aqi };
+  // (AQI is official-AirNow current/daily only — not a per-hour summary tile.)
+  return { dateLabel, today, temperature, precipitation, dew };
 }
 
 const fmtF = (f) => `${Math.round(f)}°F`;
@@ -220,19 +202,7 @@ export function renderSummary(s) {
     ));
   }
 
-  // AQI: max + time, plus any >100 stretches. Scale mirrors the chart panel:
-  // 0 to at least 100, with a reference line + hatched bands when it exceeds 100.
-  if (s.aqi) {
-    let aqiSub = `max at ${s.aqi.at}`;
-    if (s.aqi.over100 && s.aqi.over100.length) {
-      const spans = s.aqi.over100
-        .map((r) => (r.from === r.to ? r.from : `${r.from}–${r.to}`))
-        .join(", ");
-      aqiSub += ` · &gt;100: ${spans}`;
-    }
-    tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, aqiSub, s.aqi.spark,
-      { min: 0, max: Math.max(100, s.aqi.max), refLine: 100 }));
-  }
+  // (No AQI tile: official AirNow is current + daily only, shown in the Air box.)
 
   const nav = `<div class="hero-nav">
     <button type="button" class="hero-arrow" data-day="prev" aria-label="Previous day">◀</button>
@@ -244,53 +214,21 @@ export function renderSummary(s) {
 }
 
 // ---- sparkline: a tiny SVG path, no axes/labels, dashed gray line, for use as
-// a panel background. Values auto-scaled to the box. ----
-let sparkUid = 0;
+// a panel background. `opts.min`/`opts.max` fix the scale (else auto). ----
 export function sparkline(values, opts = {}, w = 200, h = 56) {
   if (!values || values.length < 2) return "";
-  // Scale: fixed min/max if given, else auto from the data.
   const lo = opts.min != null ? opts.min : Math.min(...values);
   const hi = opts.max != null ? opts.max : Math.max(...values);
   const span = hi - lo || 1;
   const pad = 4;
   const xw = w - pad * 2, yh = h - pad * 2;
-  const xAt = (i) => pad + (i / (values.length - 1)) * xw;
-  const yAt = (v) => pad + (1 - (v - lo) / span) * yh;
-
-  const pts = values.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`);
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * xw;
+    const y = pad + (1 - (v - lo) / span) * yh;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
   const d = "M" + pts.join(" L");
-
-  // Optional reference line + hatched exceedance bands (value > refLine).
-  let refSvg = "", defs = "";
-  if (opts.refLine != null && hi > opts.refLine) {
-    const uid = `hatch${sparkUid++}`;
-    const yRef = yAt(opts.refLine);
-    // contiguous index ranges where the value exceeds the reference
-    const bands = [];
-    let start = null;
-    for (let i = 0; i < values.length; i++) {
-      const over = values[i] > opts.refLine;
-      if (over && start == null) start = i;
-      if ((!over || i === values.length - 1) && start != null) {
-        const end = over ? i : i - 1;
-        bands.push([Math.max(0, start - 0.5), Math.min(values.length - 1, end + 0.5)]);
-        start = null;
-      }
-    }
-    defs = `<defs><pattern id="${uid}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <line x1="0" y1="0" x2="0" y2="5" stroke="var(--spark)" stroke-width="0.8"/>
-    </pattern></defs>`;
-    // Bands span the FULL plot height (top pad down to bottom pad), marking the
-    // whole time-column where AQI exceeds the reference — not just above the line.
-    const rects = bands.map(([a, b]) => {
-      const x = xAt(a), wBand = xAt(b) - xAt(a);
-      return `<rect x="${x.toFixed(1)}" y="${pad}" width="${wBand.toFixed(1)}" height="${yh.toFixed(1)}" fill="url(#${uid})"/>`;
-    }).join("");
-    refSvg = `${rects}<line x1="${pad}" y1="${yRef.toFixed(1)}" x2="${(w - pad).toFixed(1)}" y2="${yRef.toFixed(1)}" stroke="var(--spark)" stroke-width="1" stroke-dasharray="2 2"/>`;
-  }
-
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-    ${defs}${refSvg}
     <path d="${d}" fill="none" stroke="var(--spark)" stroke-width="1.25" stroke-dasharray="3 3"/>
   </svg>`;
 }

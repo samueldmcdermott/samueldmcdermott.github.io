@@ -34,18 +34,8 @@ export const FIELDS = {
   pressure:    { panel: "pres",  label: "Barometric pressure", key: "pressure", fam: "pres", default: true },
   vaporPressure:{panel: "vapor", label: "Vapor pressure",   key: "vaporP",   fam: "pres" },
   satVapor:    { panel: "vapor", label: "Sat. vapor pressure", key: "satVaporP", fam: "pres", dash: "5 4" },
-  // Air-quality index panel (0–500, all same units). AQI is the max envelope of
-  // the four sub-indices, so they legitimately share one plot.
-  aqi:         { panel: "aqi",   label: "AQI (overall)",    key: "aqi",      fam: "aqi",  default: true },
-  aqiPm25:     { panel: "aqi",   label: "AQI · PM2.5",      key: "aqiPm25",  fam: "aqi",  dash: "5 4" },
-  aqiPm10:     { panel: "aqi",   label: "AQI · PM10",       key: "aqiPm10",  fam: "aqi",  dash: "5 4" },
-  aqiOzone:    { panel: "aqi",   label: "AQI · Ozone",      key: "aqiOzone", fam: "aqi",  dash: "5 4" },
-  aqiNo2:      { panel: "aqi",   label: "AQI · NO₂",        key: "aqiNo2",   fam: "aqi",  dash: "5 4" },
-  // Raw concentrations panel (µg/m³) — a physically different scale.
-  pm25:        { panel: "poll",  label: "PM2.5",            key: "pm25",     fam: "conc" },
-  pm10:        { panel: "poll",  label: "PM10",             key: "pm10",     fam: "conc" },
-  ozone:       { panel: "poll",  label: "Ozone",            key: "ozone",    fam: "conc" },
-  no2:         { panel: "poll",  label: "NO₂",              key: "no2",      fam: "conc" },
+  // NB: AQI is intentionally NOT a chart field. Official AirNow is current +
+  // daily only (no hourly ±10-day series), so it lives in the Air box, not here.
 };
 
 // Assign colors as a single continuous walk through the 8-color palette across
@@ -64,12 +54,10 @@ function panelTitle(panelKey, units) {
     case "pct":   return "Percent (%)";
     case "pres":  return `Pressure (${units.pres})`;
     case "vapor": return `Vapor pressure (${units.pres})`;
-    case "aqi":   return "Air quality index (0–500)";
-    case "poll":  return "Pollutants (µg/m³)";
   }
   return panelKey;
 }
-const PANEL_ORDER = ["temp", "pct", "pres", "vapor", "aqi", "poll"];
+const PANEL_ORDER = ["temp", "pct", "pres", "vapor"];
 
 // ---- unit conversion ----
 function convert(v, fam, units) {
@@ -128,9 +116,6 @@ export function renderChart(mount, records, enabled, axisMount, units = { temp: 
     if (lo === hi) { lo -= 1; hi += 1; }
     const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
     if (panelKey === "pct") { lo = 0; hi = 100; }
-    // AQI: pin to 0 and always show at least up to 100, so the Good/Moderate/
-    // Unhealthy-for-Sensitive reference lines (50, 100) are always visible.
-    if (panelKey === "aqi") { lo = 0; hi = Math.max(hi, 100); }
     const yOf = (v) => top + PANEL_H - ((v - lo) / (hi - lo)) * PANEL_H;
     return { panelKey, top, fieldsHere, lo, hi, yOf, title: panelTitle(panelKey, units) };
   });
@@ -170,16 +155,6 @@ export function renderChart(mount, records, enabled, axisMount, units = { temp: 
       const v = g.lo + ((g.hi - g.lo) * k) / 2;
       const y = g.yOf(v);
       if (k !== 0 && k !== 2) svg.appendChild(el("line", { class: "grid-line", x1: box.x, y1: y, x2: box.x + box.w, y2: y }));
-    }
-
-    // AQI reference lines: 50 (Good→Moderate, dotted gray) and 100
-    // (Moderate→Unhealthy for Sensitive, thick). Drawn under the series.
-    if (g.panelKey === "aqi") {
-      for (const ref of [{ v: 50, cls: "aqi-ref-50" }, { v: 100, cls: "aqi-ref-100" }]) {
-        if (ref.v > g.hi) continue;
-        const y = g.yOf(ref.v);
-        svg.appendChild(el("line", { class: ref.cls, x1: box.x, y1: y, x2: box.x + box.w, y2: y }));
-      }
     }
 
     // series

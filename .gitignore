@@ -14,3 +14,9 @@ Thumbs.db
 
 # Mortgage calculator legacy source (original Python / notebook)
 mortgagecalc/legacy/
+
+# Weather app: setup docs (not part of the served site)
+weather/AIRNOW_SETUP.md
+# Wrangler local cache — contains Cloudflare account id/email, never commit
+weather/airnow-proxy/.wrangler/
+.wrangler/

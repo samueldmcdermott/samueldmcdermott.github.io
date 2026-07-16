@@ -1,20 +1,19 @@
-// Air quality.
+// Air quality — OFFICIAL EPA AirNow only.
 //
-// Two sources, in order of preference:
-//   1. Open-Meteo Air Quality API — key-free, CORS-clean, works directly from a
-//      static site. Gives US AQI + component pollutants (PM2.5, PM10, O3, NO2,
-//      SO2, CO) as an hourly forecast. This is the DEFAULT and needs no setup.
-//   2. AirNow.gov (official EPA) — more authoritative and includes a written
-//      forecast discussion, BUT requires a secret API key and sends no CORS
-//      headers, so it can only be reached through a proxy you deploy. If you set
-//      AIRNOW_PROXY below, the box upgrades to AirNow automatically. The proxy
-//      just needs to expose GET /airnow/observation?lat=&lon= and
-//      /airnow/forecast?lat=&lon= that inject the key and add CORS.
+// AirNow's API (airnowapi.org) IS reachable from the browser: it sends
+// `Access-Control-Allow-Origin: *`. The only barrier is the API key, which must
+// not be shipped in public client JS. So we call it through a tiny serverless
+// proxy that holds the key and re-serves the data. Set AIRNOW_PROXY to your
+// deployed Worker (see AIRNOW_SETUP.md). Until then, the Air box explains setup.
+//
+// The free AirNow feed is CURRENT observations + a DAILY forecast (with a
+// written discussion). It is not an hourly ±10-day series — accuracy over
+// granularity — so there is no AQI line on the chart; only the boxes.
 
-export const AIRNOW_PROXY = ""; // optional; set to your proxy base to use AirNow.
+export const AIRNOW_PROXY = "https://wx-air.samueldmcdermott.workers.dev"; // e.g. "https://wx-air.<you>.workers.dev"
 export function airnowConfigured() { return !!AIRNOW_PROXY; }
 
-// US AQI category boundaries -> name + official color (used for the pill).
+// US AQI category boundaries -> name + official AirNow color.
 const AQI_CATS = [
   { max: 50,  name: "Good", color: "#00e400" },
   { max: 100, name: "Moderate", color: "#ffff00" },
@@ -28,79 +27,35 @@ export function aqiCategory(aqi) {
   return AQI_CATS.find((c) => aqi <= c.max);
 }
 
-// ---- Open-Meteo air quality (default source) ----
-async function openMeteoAir(lat, lon) {
-  // us_aqi = overall index; us_aqi_* = per-pollutant SUB-INDICES (same 0–500
-  // scale as the overall AQI, which is their max). The raw pm2_5/pm10/ozone/no2
-  // are concentrations in µg/m³ — a different, non-invertible scale.
-  const hourly = [
-    "us_aqi", "us_aqi_pm2_5", "us_aqi_pm10", "us_aqi_ozone", "us_aqi_nitrogen_dioxide",
-    "pm2_5", "pm10", "ozone", "nitrogen_dioxide",
-  ].join(",");
-  const url =
-    "https://air-quality-api.open-meteo.com/v1/air-quality" +
-    `?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
-    `&hourly=${hourly}&past_days=10&forecast_days=5&timezone=UTC`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`Open-Meteo air ${r.status}`);
-  const d = await r.json();
-  const h = d.hourly;
-  if (!h?.time?.length) return { source: "Open-Meteo", now: null, peak: null, series: [], link: airnowLink(lat, lon) };
-
-  // hourly series aligned to the same UTC-hour keys the chart uses.
-  const series = h.time.map((t, i) => ({
-    t: new Date(t + "Z").toISOString().slice(0, 13) + ":00:00Z",
-    aqi: h.us_aqi[i],
-    // sub-indices (0–500, same units as aqi)
-    aqiPm25: h.us_aqi_pm2_5[i], aqiPm10: h.us_aqi_pm10[i],
-    aqiOzone: h.us_aqi_ozone[i], aqiNo2: h.us_aqi_nitrogen_dioxide[i],
-    // concentrations (µg/m³)
-    pm25: h.pm2_5[i], pm10: h.pm10[i], ozone: h.ozone[i], no2: h.nitrogen_dioxide[i],
-  }));
-
-  // nearest hour to "now" for the summary
-  const nowMs = Date.now();
-  let ni = 0, best = Infinity;
-  h.time.forEach((t, i) => {
-    const dt = Math.abs(new Date(t + "Z").getTime() - nowMs);
-    if (dt < best) { best = dt; ni = i; }
-  });
-  const now = {
-    aqi: h.us_aqi[ni], pm25: h.pm2_5[ni], pm10: h.pm10[ni],
-    ozone: h.ozone[ni], no2: h.nitrogen_dioxide[ni],
-  };
-  // peak AQI over the remaining forecast horizon (the "latest forecast")
-  let peak = { aqi: -1, t: null };
-  for (let i = ni; i < h.time.length; i++) {
-    if (h.us_aqi[i] != null && h.us_aqi[i] > peak.aqi) peak = { aqi: h.us_aqi[i], t: h.time[i] };
-  }
-  return { source: "Open-Meteo", now, peak, series, link: airnowLink(lat, lon) };
-}
-
-// Deep link to the official AirNow.gov map centered on this location.
+// Deep link to the official AirNow.gov page for this location.
 export function airnowLink(lat, lon) {
   return `https://www.airnow.gov/?city=&latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}`;
 }
 
-// ---- AirNow via proxy (optional upgrade) ----
 async function px(path, params) {
   const q = new URLSearchParams(params).toString();
   const r = await fetch(`${AIRNOW_PROXY}${path}?${q}`);
   if (!r.ok) throw new Error(`AirNow proxy ${r.status}`);
   return r.json();
 }
-async function airnowOfficial(lat, lon) {
-  const [obs, fc] = await Promise.all([
+
+// Returns official AirNow data, or { configured:false } when no proxy is set.
+// observations: array of { ParameterName, AQI, Category:{Name}, DateObserved,
+//   HourObserved, ReportingArea, StateCode, ... }
+// forecasts: array of { DateForecast, ParameterName, AQI, Category:{Name},
+//   Discussion, ActionDay, ReportingArea, ... }
+export async function airQuality(lat, lon) {
+  const link = airnowLink(lat, lon);
+  if (!airnowConfigured()) return { configured: false, link };
+  const [observations, forecasts] = await Promise.all([
     px("/airnow/observation", { lat, lon }).catch(() => []),
     px("/airnow/forecast", { lat, lon }).catch(() => []),
   ]);
-  return { source: "AirNow", observations: obs || [], forecasts: fc || [], series: [], link: airnowLink(lat, lon) };
-}
-
-export async function airQuality(lat, lon) {
-  if (airnowConfigured()) {
-    try { return await airnowOfficial(lat, lon); }
-    catch { /* fall through to Open-Meteo */ }
+  // The current AQI is the max sub-index across reported pollutants — pick the
+  // observation with the highest AQI as the headline.
+  let now = null;
+  for (const o of observations || []) {
+    if (o.AQI != null && (!now || o.AQI > now.AQI)) now = o;
   }
-  return openMeteoAir(lat, lon);
+  return { configured: true, observations: observations || [], forecasts: forecasts || [], now, link };
 }

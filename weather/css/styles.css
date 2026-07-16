@@ -232,8 +232,6 @@ a{color:var(--accent-line)}
 .past-shade{fill:var(--past)}
 .day-band{fill:var(--ink);opacity:.03}
 /* AQI reference lines */
-.aqi-ref-50{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;opacity:.7}
-.aqi-ref-100{stroke:var(--ink-2);stroke-width:2}
 .series-line{fill:none;stroke-width:1.75}
 /* NB: do not set stroke-dasharray here — a CSS value overrides the per-series
    inline dash attribute set in chart.js, flattening every line to solid. */
