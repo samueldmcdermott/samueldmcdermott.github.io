@@ -120,9 +120,7 @@ export function daySummary(records, dayDate = new Date()) {
     const mean = deltas.reduce((a, b) => a + b, 0) / (deltas.length || 1);
     const sd = Math.sqrt(deltas.reduce((a, b) => a + (b - mean) ** 2, 0) / (deltas.length || 1));
     const gradual = trend === "stable" || maxAbs <= mean + 2 * sd + 0.01;
-    const nowDew = today && nearestNow(records, "dewC") ? cToF(nearestNow(records, "dewC").dewC) : null;
     dew = {
-      current: nowDew, // only meaningful for today
       lo: dLo, hi: dHi, spread: dHi - dLo,
       trend, gradual,
       sharpAt: gradual ? null : (sharp ? hourLabel(sharp) : null),
@@ -209,15 +207,14 @@ export function renderSummary(s) {
     ));
   }
 
-  // Dew point: spread + trend + gradual/sharp
+  // Dew point: big value = the day's range; sub = trend descriptor only.
   if (s.dew) {
     const d = s.dew;
-    const trendWord = d.trend === "stable" ? "stable" : d.trend;
-    let sub = `spread ${Math.round(d.lo)}–${Math.round(d.hi)}°F · ${trendWord}`;
+    let sub = d.trend === "stable" ? "stable" : d.trend;
     if (d.trend !== "stable") sub += d.gradual ? ", gradual" : `, sharpest near ${d.sharpAt}`;
     tiles.push(tile(
       "Dew point",
-      d.current != null ? fmtF(d.current) : `${Math.round(d.lo)}–${Math.round(d.hi)}°F`,
+      `${Math.round(d.lo)}–${Math.round(d.hi)}°F`,
       sub,
       d.spark,
     ));
