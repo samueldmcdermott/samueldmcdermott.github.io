@@ -35,8 +35,12 @@ export function airnowLink(lat, lon) {
 async function px(path, params) {
   const q = new URLSearchParams(params).toString();
   const r = await fetch(`${AIRNOW_PROXY}${path}?${q}`);
-  if (!r.ok) throw new Error(`AirNow proxy ${r.status}`);
-  return r.json();
+  const data = await r.json().catch(() => null);
+  // Surface the proxy's own error message (e.g. missing key) instead of hiding it.
+  if (!r.ok || (data && data.error)) {
+    throw new Error(data?.error ? `AirNow proxy: ${data.error}` : `AirNow proxy ${r.status}`);
+  }
+  return data;
 }
 
 // Returns official AirNow data, or { configured:false } when no proxy is set.
@@ -47,8 +51,10 @@ async function px(path, params) {
 export async function airQuality(lat, lon) {
   const link = airnowLink(lat, lon);
   if (!airnowConfigured()) return { configured: false, link };
+  // Observations are the primary signal — if the proxy errors (e.g. missing
+  // key), let it throw so the box can explain it. Forecast is best-effort.
   const [observations, forecasts] = await Promise.all([
-    px("/airnow/observation", { lat, lon }).catch(() => []),
+    px("/airnow/observation", { lat, lon }),
     px("/airnow/forecast", { lat, lon }).catch(() => []),
   ]);
   // The current AQI is the max sub-index across reported pollutants — pick the
