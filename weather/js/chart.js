@@ -36,7 +36,7 @@ export const FIELDS = {
   satVapor:    { panel: "vapor", label: "Sat. vapor pressure", key: "satVaporP", fam: "pres", dash: "5 4" },
   // Air-quality index panel (0–500, all same units). AQI is the max envelope of
   // the four sub-indices, so they legitimately share one plot.
-  aqi:         { panel: "aqi",   label: "US AQI (overall)", key: "aqi",      fam: "aqi",  default: true },
+  aqi:         { panel: "aqi",   label: "AQI (overall)",    key: "aqi",      fam: "aqi",  default: true },
   aqiPm25:     { panel: "aqi",   label: "AQI · PM2.5",      key: "aqiPm25",  fam: "aqi",  dash: "5 4" },
   aqiPm10:     { panel: "aqi",   label: "AQI · PM10",       key: "aqiPm10",  fam: "aqi",  dash: "5 4" },
   aqiOzone:    { panel: "aqi",   label: "AQI · Ozone",      key: "aqiOzone", fam: "aqi",  dash: "5 4" },

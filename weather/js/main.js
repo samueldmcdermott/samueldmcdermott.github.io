@@ -332,13 +332,13 @@ async function drawAir(lat, lon) {
     const peakCat = aqiCategory(q.peak?.aqi);
     const peakWhen = q.peak?.t ? new Date(q.peak.t + "Z").toLocaleString(undefined, { weekday: "short", hour: "numeric" }) : "";
     body.innerHTML =
-      `<div class="big">US AQI <span class="aqi-pill" style="background:${cat.color}">${Math.round(q.now.aqi)} ${cat.name}</span></div>` +
+      `<div class="big">AQI <span class="aqi-pill" style="background:${cat.color}">${Math.round(q.now.aqi)} ${cat.name}</span></div>` +
       r1("PM2.5", q.now.pm25, "µg/m³") +
       r1("PM10", q.now.pm10, "µg/m³") +
       r1("Ozone", q.now.ozone, "µg/m³") +
       r1("NO₂", q.now.no2, "µg/m³") +
       (q.peak ? `<div class="note">Forecast peak: AQI ${Math.round(q.peak.aqi)} (${peakCat.name})${peakWhen ? " around " + peakWhen : ""}.</div>` : "") +
-      `<div class="note">US AQI = the <b>max</b> of the per-pollutant sub-indices. Enable the “AQI · …” series to see which pollutant is driving it (ozone typically peaks mid-afternoon; its index lags via an 8-hour average).</div>` +
+      `<div class="note">AQI = the <b>max</b> of the per-pollutant sub-indices. Enable the “AQI · …” series to see which pollutant is driving it (ozone typically peaks mid-afternoon; its index lags via an 8-hour average).</div>` +
       `<div class="note">Source: Open-Meteo (Copernicus CAMS). ${link}</div>`;
     return q.series || [];
   } catch (e) {

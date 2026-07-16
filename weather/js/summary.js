@@ -137,10 +137,12 @@ const fmtF = (f) => `${Math.round(f)}°F`;
 export function renderCurrent(c) {
   if (!c) return "";
   const cell = (k, v) => `<div class="cur-cell"><div class="cur-k">${k}</div><div class="cur-v">${v}</div></div>`;
-  return `<div class="cur-row">
+  const nowTime = new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `<div class="cur-title">At ${nowTime}, readings</div>
+  <div class="cur-row">
     ${cell("Temperature", c.tempF != null ? fmtF(c.tempF) : "—")}
     ${cell("Dew point", c.dewF != null ? fmtF(c.dewF) : "—")}
-    ${cell("US AQI", c.aqi != null ? Math.round(c.aqi) : "—")}
+    ${cell("AQI", c.aqi != null ? Math.round(c.aqi) : "—")}
   </div>`;
 }
 
@@ -200,7 +202,7 @@ export function renderSummary(s) {
 
   // AQI: max + time
   if (s.aqi) {
-    tiles.push(tile("US AQI", `${Math.round(s.aqi.max)}`, `max at ${s.aqi.at}`, s.aqi.spark));
+    tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, `max at ${s.aqi.at}`, s.aqi.spark));
   }
 
   return `<div class="hero-date">${s.dateLabel}</div><div class="hero-tiles">${tiles.join("")}</div>`;
