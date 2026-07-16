@@ -13,6 +13,7 @@
   --grid:#e6e6e6;
   --past:rgba(120,120,120,.14);  /* gray shade over past values */
   --tick:rgba(150,150,150,.55);  /* 6h vertical guides */
+  --spark:rgba(120,120,120,.5); /* summary background sparkline */
   /* chart series palette — every field gets a distinct hue (legend + dash back it up) */
   --c-1:#1f6feb;  /* temperature */
   --c-2:#e8590c;  /* dew point */
@@ -30,7 +31,7 @@
     --surface:#0e0e0e; --surface-2:#1a1a1a; --surface-3:#222222;
     --accent:#f2f2f2; --accent-line:#5aa0ff; --focus:#ffffff;
     --grid:#242424;
-    --past:rgba(160,160,160,.16); --tick:rgba(150,150,150,.5);
+    --past:rgba(160,160,160,.16); --tick:rgba(150,150,150,.5); --spark:rgba(160,160,160,.45);
     --c-1:#5aa0ff; --c-2:#ff922b; --c-3:#51cf66; --c-4:#9775fa; --c-5:#3bc9db;
     --c-6:#f06595; --c-7:#ffc078; --c-8:#66d9e8;
   }
@@ -41,7 +42,7 @@
   --surface:#0e0e0e; --surface-2:#1a1a1a; --surface-3:#222222;
   --accent:#f2f2f2; --accent-line:#5aa0ff; --focus:#ffffff;
   --grid:#242424;
-  --past:rgba(160,160,160,.16); --tick:rgba(150,150,150,.5);
+  --past:rgba(160,160,160,.16); --tick:rgba(150,150,150,.5); --spark:rgba(160,160,160,.45);
   --c-1:#5aa0ff; --c-2:#ff922b; --c-3:#51cf66; --c-4:#9775fa; --c-5:#3bc9db;
   --c-6:#f06595; --c-7:#ffc078; --c-8:#66d9e8;
 }
@@ -51,7 +52,7 @@
   --surface:#ffffff; --surface-2:#f4f4f4; --surface-3:#ececec;
   --accent:#111111; --accent-line:#1f6feb; --focus:#000000;
   --grid:#e6e6e6;
-  --past:rgba(120,120,120,.14); --tick:rgba(150,150,150,.55);
+  --past:rgba(120,120,120,.14); --tick:rgba(150,150,150,.55); --spark:rgba(120,120,120,.5);
   --c-1:#1f6feb; --c-2:#e8590c; --c-3:#2b8a3e; --c-4:#6741d9; --c-5:#0c8599;
   --c-6:#d6336c; --c-7:#f08c00; --c-8:#1098ad;
 }
@@ -97,17 +98,31 @@ a{color:var(--accent-line)}
 }
 .search-row button:hover{opacity:.9}
 
+/* ---- current readout ---- */
+.current{margin-bottom:16px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);padding:12px 16px}
+.cur-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cur-cell{text-align:center}
+.cur-k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:3px}
+.cur-v{font-size:26px;font-weight:700;letter-spacing:-0.02em;color:var(--ink);line-height:1.05}
+
 /* ---- daily summary hero ---- */
 .hero{margin-bottom:22px}
-.hero-date{font-size:12.5px;color:var(--ink-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
-.hero-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.hero-date{font-size:12.5px;color:var(--ink-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;text-align:center}
+.hero-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
 .hero-tile{
+  position:relative;overflow:hidden;
   border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface-2);
 }
+/* background sparkline fills the tile behind the text */
+.hero-tile .spark{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.hero-content{position:relative;z-index:1}
 .hero-k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:4px}
-.hero-v{font-size:28px;font-weight:600;letter-spacing:-0.02em;color:var(--ink);line-height:1.1}
-.hero-v .hero-pm{font-size:18px;color:var(--ink-2);font-weight:500}
-.hero-sub{font-size:12px;color:var(--ink-3);margin-top:5px}
+/* per spec: values are black so they read over the background plot */
+.hero-v{font-size:24px;font-weight:700;letter-spacing:-0.02em;color:#111;line-height:1.1}
+.hero-sub{font-size:11.5px;color:var(--ink-2);margin-top:5px}
+@media (prefers-color-scheme: dark){ .hero-v{color:#f2f2f2} }
+:root[data-theme="dark"] .hero-v{color:#f2f2f2}
+:root[data-theme="light"] .hero-v{color:#111}
 
 /* ---- field toggles ---- */
 .fields{margin-bottom:20px}
@@ -122,6 +137,19 @@ a{color:var(--accent-line)}
 .chip[aria-pressed="true"]{border-color:var(--dot);color:var(--ink)}
 .chip .swatch{width:11px;height:11px;border-radius:3px;background:var(--dot);flex:none;opacity:.35}
 .chip[aria-pressed="true"] .swatch{opacity:1}
+.chip-wrap{display:inline-flex;align-items:center;gap:2px}
+.info-btn{
+  font:inherit;font-size:12px;line-height:1;cursor:pointer;
+  background:none;border:none;color:var(--ink-3);padding:2px 3px;border-radius:50%;
+}
+.info-btn:hover{color:var(--accent-line)}
+.info-popover{
+  position:absolute;z-index:20;max-width:300px;
+  background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line-2);border-radius:10px;padding:12px 14px;
+  font-size:12.5px;line-height:1.55;box-shadow:0 6px 22px rgba(0,0,0,.2);
+}
+.info-popover b{color:var(--ink)}
 
 /* ---- chart ---- */
 .chartsec{margin-bottom:26px}
@@ -157,11 +185,11 @@ a{color:var(--accent-line)}
 /* fixed overlay (title + unit + y-ticks + legend) pinned to the left edge,
    stays put while the plot scrolls underneath it */
 .chart-axis{
-  position:absolute;top:0;left:0;bottom:0;width:108px;pointer-events:none;
+  position:absolute;top:0;left:0;bottom:0;width:122px;pointer-events:none;
   background:var(--surface);
   border-right:1px solid var(--line);
-  -webkit-mask-image:linear-gradient(to right,#000 92px,transparent);
-  mask-image:linear-gradient(to right,#000 92px,transparent);
+  -webkit-mask-image:linear-gradient(to right,#000 114px,transparent);
+  mask-image:linear-gradient(to right,#000 114px,transparent);
 }
 .chart-axis svg{display:block}
 /* hover crosshair + tooltip */
@@ -190,6 +218,7 @@ a{color:var(--accent-line)}
 .now-rule{stroke:var(--accent-line);stroke-width:1.5;stroke-dasharray:4 3}
 .now-txt{fill:var(--accent-line);font-size:10px;font-weight:600}
 .past-shade{fill:var(--past)}
+.day-band{fill:var(--ink);opacity:.03}
 /* AQI reference lines */
 .aqi-ref-50{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;opacity:.7}
 .aqi-ref-100{stroke:var(--ink-2);stroke-width:2}

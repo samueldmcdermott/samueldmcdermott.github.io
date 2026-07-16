@@ -9,7 +9,7 @@ import { airQuality, aqiCategory } from "./airnow.js";
 import { wetBulb, vaporPressure, saturationVaporPressure, cToF, hPaToInHg } from "./physics.js";
 import * as store from "./store.js";
 import { renderChart, FIELDS, AXIS_W } from "./chart.js";
-import { daySummary, renderSummary } from "./summary.js";
+import { daySummary, renderSummary, currentReadout, renderCurrent } from "./summary.js";
 
 const $ = (id) => document.getElementById(id);
 // Session-only defaults (not persisted). Only the location is kept — in the URL.
@@ -32,11 +32,28 @@ let chartInfo = null; // geometry returned by renderChart, for the hover layer
   });
 })();
 
+// Prose definitions shown by the (i) button on certain chips. The relationship
+// is given in the most natural form: the three sit in a fixed order.
+const FIELD_INFO = {
+  dewPoint: `<b>Dew point</b> is the temperature a surface must reach for
+    condensation (dew) to form on it — equivalently, the temperature at which the
+    current air would become saturated. Higher dew point = more humid, muggier air.`,
+  wetBulb: `<b>Wet-bulb temperature</b> is the lowest temperature a surface can
+    reach by evaporative cooling alone (a wet thermometer in moving air). It sets
+    how well sweat can cool a body.<br><br>
+    The three always order as
+    <b>dew&nbsp;point ≤ wet&nbsp;bulb ≤ air&nbsp;temperature</b>,
+    with equality only at 100% humidity (saturated air).`,
+};
+
 // ---------- field toggle chips ----------
 function buildToggles() {
   const host = $("fieldToggles");
   host.innerHTML = "";
   for (const [id, spec] of Object.entries(FIELDS)) {
+    const wrap = document.createElement("span");
+    wrap.className = "chip-wrap";
+
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip";
@@ -49,9 +66,42 @@ function buildToggles() {
       chip.setAttribute("aria-pressed", enabled.includes(id) ? "true" : "false");
       draw();
     });
-    host.appendChild(chip);
+    wrap.appendChild(chip);
+
+    // (i) info button for fields with a definition
+    if (FIELD_INFO[id]) {
+      const info = document.createElement("button");
+      info.type = "button";
+      info.className = "info-btn";
+      info.textContent = "ⓘ";
+      info.setAttribute("aria-label", `About ${spec.label}`);
+      info.addEventListener("click", (e) => { e.stopPropagation(); toggleInfoPopover(info, FIELD_INFO[id]); });
+      wrap.appendChild(info);
+    }
+
+    host.appendChild(wrap);
   }
 }
+
+// A single shared popover for (i) buttons; click the same button (or anywhere
+// else) to dismiss. Positioned under the button.
+let infoAnchor = null;
+function toggleInfoPopover(btn, html) {
+  const pop = $("infoPopover");
+  if (infoAnchor === btn && !pop.hidden) { pop.hidden = true; infoAnchor = null; return; }
+  infoAnchor = btn;
+  pop.innerHTML = html;
+  pop.hidden = false;
+  const r = btn.getBoundingClientRect();
+  pop.style.left = `${Math.max(8, Math.min(r.left + window.scrollX, window.innerWidth - pop.offsetWidth - 8))}px`;
+  pop.style.top = `${r.bottom + window.scrollY + 6}px`;
+}
+addEventListener("click", (e) => {
+  const pop = $("infoPopover");
+  if (pop.hidden) return;
+  if (e.target.closest(".info-btn") || e.target.closest("#infoPopover")) return;
+  pop.hidden = true; infoAnchor = null;
+});
 
 // ---------- merge sources into one hourly record map ----------
 // Precedence for each hour/field: measured NWS observation > NWS forecast >
@@ -106,8 +156,12 @@ function draw() {
   hideTip();
 }
 
-// Daily-summary hero for today. Always in °F per spec.
+// "Current" readout + daily-summary hero for today. Always in °F per spec.
 function drawHero() {
+  const cur = $("current");
+  const c = currentReadout(currentRecords);
+  if (c) { cur.innerHTML = renderCurrent(c); cur.hidden = false; } else { cur.hidden = true; }
+
   const hero = $("hero");
   const s = daySummary(currentRecords);
   if (!s) { hero.hidden = true; return; }
@@ -285,7 +339,7 @@ async function drawAir(lat, lon) {
       r1("NO₂", q.now.no2, "µg/m³") +
       (q.peak ? `<div class="note">Forecast peak: AQI ${Math.round(q.peak.aqi)} (${peakCat.name})${peakWhen ? " around " + peakWhen : ""}.</div>` : "") +
       `<div class="note">US AQI = the <b>max</b> of the per-pollutant sub-indices. Enable the “AQI · …” series to see which pollutant is driving it (ozone typically peaks mid-afternoon; its index lags via an 8-hour average).</div>` +
-      `<div class="note">Numbers &amp; plot: Open-Meteo, computed from the Copernicus <b>CAMS</b> model — <b>not</b> AirNow/EPA. ${link}<br>Set <code>AIRNOW_PROXY</code> in <code>js/airnow.js</code> to use official AirNow numbers.</div>`;
+      `<div class="note">Source: Open-Meteo (Copernicus CAMS). ${link}</div>`;
     return q.series || [];
   } catch (e) {
     body.innerHTML = `<span class="err">Air quality unavailable (${e.message}).</span>`;
@@ -354,11 +408,13 @@ async function loadLocation(query) {
     status.textContent = `${currentRecords.length} hourly points · ${measuredN} measured (cached) · forecast to +10 d.`;
 
     // When air quality arrives, fold it in and redraw (keeps scroll position).
+    // Re-run the hero too so the Current AQI + AQI tile fill in.
     const airSeries = await airPromise.catch(() => []);
     if (airSeries.length) {
       const vp = $("chartViewport"); const keepLeft = vp.scrollLeft;
       currentRecords = mergeAll({ omRecords, nwsForecast, observed, airSeries });
       draw();
+      drawHero();
       vp.scrollLeft = keepLeft;
     }
   } catch (e) {

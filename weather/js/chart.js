@@ -15,7 +15,7 @@ const NS = "http://www.w3.org/2000/svg";
 const DAY_W = 96;
 const PANEL_H = 118;
 const PANEL_GAP = 30;      // vertical space between framed panels
-export const AXIS_W = 108; // width of the fixed overlay gutter (title/legend/ticks)
+export const AXIS_W = 122; // width of the fixed overlay gutter (title/legend/ticks)
 const PLOT_L = AXIS_W + 6; // plot content starts right of the overlay so it's
                            // never hidden behind the sticky gutter at scroll 0
 const PAD = { r: 16, t: 22, b: 34 };
@@ -135,6 +135,20 @@ export function renderChart(mount, records, enabled, axisMount, units = { temp: 
     return { panelKey, top, fieldsHere, lo, hi, yOf, title: panelTitle(panelKey, units) };
   });
 
+  // ---- odd-day banding: faint full-height shade over every odd calendar day,
+  // so it's easy to see where each day begins. Drawn first (behind everything).
+  {
+    const dayStart = new Date(records[0].t); dayStart.setHours(0, 0, 0, 0);
+    for (let ms = dayStart.getTime(); ms <= t1; ms += 864e5) {
+      const dayDate = new Date(ms);
+      if (dayDate.getDate() % 2 === 1) { // odd day-of-month
+        const xa = Math.max(originX, xOf(new Date(ms).toISOString()));
+        const xb = Math.min(originX + plotW, xOf(new Date(ms + 864e5).toISOString()));
+        if (xb > xa) svg.appendChild(el("rect", { class: "day-band", x: xa, y: PAD.t, width: xb - xa, height: H - PAD.t - PAD.b }));
+      }
+    }
+  }
+
   // ---- past shade behind everything (full height) ----
   const shadeW = Math.max(0, Math.min(nowX, originX + plotW) - originX);
   if (shadeW > 0) svg.appendChild(el("rect", { class: "past-shade", x: originX, y: PAD.t, width: shadeW, height: H - PAD.t - PAD.b }));
@@ -205,9 +219,10 @@ function drawTimeGuides(svg, records, t0, t1, xOf, yTop, yBot, { isLast, isFirst
     const x = xOf(d.toISOString());
     const midnight = hr === 0;
     svg.appendChild(el("line", { class: midnight ? "grid-day" : "tick6-line", x1: x, y1: yTop, x2: x, y2: yBot }));
-    if (midnight && isFirst) {
+    // Date label centered over NOON of each day (above the first panel).
+    if (hr === 12 && isFirst) {
       const lbl = d.toLocaleDateString(undefined, { month: "numeric", day: "numeric" });
-      const t = el("text", { class: "tick-txt", x: x + 3, y: yTop - 6 });
+      const t = el("text", { class: "tick-txt", x, y: yTop - 6, "text-anchor": "middle" });
       t.textContent = lbl;
       svg.appendChild(t);
     }
@@ -254,7 +269,7 @@ function drawOverlay(axisMount, panelGeo, H) {
     for (let k = 0; k <= 2; k++) {
       const v = g.lo + ((g.hi - g.lo) * k) / 2;
       const y = g.yOf(v);
-      const t = el("text", { class: "tick-txt", x: AXIS_W - 6, y: y + 3, "text-anchor": "end" });
+      const t = el("text", { class: "tick-txt", x: AXIS_W - 12, y: y + 3, "text-anchor": "end" });
       t.textContent = fmtTick(v);
       svg.appendChild(t);
     }
