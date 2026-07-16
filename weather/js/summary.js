@@ -155,10 +155,11 @@ export function renderCurrent(c) {
   </div>`;
 }
 
-// One summary tile with a background sparkline.
-function tile(kicker, valueHtml, subHtml, sparkValues) {
+// One summary tile with a background sparkline. `sparkOpts` tunes the scale
+// (fixed min/max) and an optional reference line with hatched exceedance bands.
+function tile(kicker, valueHtml, subHtml, sparkValues, sparkOpts) {
   return `<div class="hero-tile">
-    ${sparkline(sparkValues)}
+    ${sparkline(sparkValues, sparkOpts)}
     <div class="hero-content">
       <div class="hero-k">${kicker}</div>
       <div class="hero-v">${valueHtml}</div>
@@ -185,13 +186,14 @@ export function renderSummary(s) {
     t.spark,
   ));
 
-  // Precipitation: max chance + time
+  // Precipitation: max chance + time (sparkline fixed to 0–100%)
   if (s.precipitation) {
     tiles.push(tile(
       "Precipitation",
       `${Math.round(s.precipitation.max)}%`,
       `max chance at ${s.precipitation.at}`,
       s.precipitation.spark,
+      { min: 0, max: 100 },
     ));
   }
 
@@ -209,9 +211,11 @@ export function renderSummary(s) {
     ));
   }
 
-  // AQI: max + time
+  // AQI: max + time. Scale mirrors the chart panel: 0 to at least 100, and when
+  // it exceeds 100, draw a reference line at 100 with hatched exceedance bands.
   if (s.aqi) {
-    tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, `max at ${s.aqi.at}`, s.aqi.spark));
+    tiles.push(tile("AQI", `${Math.round(s.aqi.max)}`, `max at ${s.aqi.at}`, s.aqi.spark,
+      { min: 0, max: Math.max(100, s.aqi.max), refLine: 100 }));
   }
 
   const nav = `<div class="hero-nav">
@@ -225,19 +229,50 @@ export function renderSummary(s) {
 
 // ---- sparkline: a tiny SVG path, no axes/labels, dashed gray line, for use as
 // a panel background. Values auto-scaled to the box. ----
-export function sparkline(values, w = 200, h = 56) {
+let sparkUid = 0;
+export function sparkline(values, opts = {}, w = 200, h = 56) {
   if (!values || values.length < 2) return "";
-  const lo = Math.min(...values), hi = Math.max(...values);
+  // Scale: fixed min/max if given, else auto from the data.
+  const lo = opts.min != null ? opts.min : Math.min(...values);
+  const hi = opts.max != null ? opts.max : Math.max(...values);
   const span = hi - lo || 1;
   const pad = 4;
   const xw = w - pad * 2, yh = h - pad * 2;
-  const pts = values.map((v, i) => {
-    const x = pad + (i / (values.length - 1)) * xw;
-    const y = pad + (1 - (v - lo) / span) * yh;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
+  const xAt = (i) => pad + (i / (values.length - 1)) * xw;
+  const yAt = (v) => pad + (1 - (v - lo) / span) * yh;
+
+  const pts = values.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`);
   const d = "M" + pts.join(" L");
+
+  // Optional reference line + hatched exceedance bands (value > refLine).
+  let refSvg = "", defs = "";
+  if (opts.refLine != null && hi > opts.refLine) {
+    const uid = `hatch${sparkUid++}`;
+    const yRef = yAt(opts.refLine);
+    // contiguous index ranges where the value exceeds the reference
+    const bands = [];
+    let start = null;
+    for (let i = 0; i < values.length; i++) {
+      const over = values[i] > opts.refLine;
+      if (over && start == null) start = i;
+      if ((!over || i === values.length - 1) && start != null) {
+        const end = over ? i : i - 1;
+        bands.push([Math.max(0, start - 0.5), Math.min(values.length - 1, end + 0.5)]);
+        start = null;
+      }
+    }
+    defs = `<defs><pattern id="${uid}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="5" stroke="var(--spark)" stroke-width="0.8"/>
+    </pattern></defs>`;
+    const rects = bands.map(([a, b]) => {
+      const x = xAt(a), wBand = xAt(b) - xAt(a);
+      return `<rect x="${x.toFixed(1)}" y="${pad}" width="${wBand.toFixed(1)}" height="${(yRef - pad).toFixed(1)}" fill="url(#${uid})"/>`;
+    }).join("");
+    refSvg = `${rects}<line x1="${pad}" y1="${yRef.toFixed(1)}" x2="${(w - pad).toFixed(1)}" y2="${yRef.toFixed(1)}" stroke="var(--spark)" stroke-width="1" stroke-dasharray="2 2"/>`;
+  }
+
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    ${defs}${refSvg}
     <path d="${d}" fill="none" stroke="var(--spark)" stroke-width="1.25" stroke-dasharray="3 3"/>
   </svg>`;
 }
