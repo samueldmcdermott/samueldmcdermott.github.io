@@ -5,7 +5,7 @@ import { geocode } from "./geocode.js";
 import * as noaa from "./noaa.js";
 import { openMeteo } from "./openmeteo.js";
 import { moonPhase } from "./moon.js";
-import { airQuality, aqiCategory } from "./airnow.js";
+import { airQuality, aqiCategory, reportingAreaLabel, purpleAir, airGradient } from "./airnow.js";
 import { wetBulb, vaporPressure, saturationVaporPressure, cToF, hPaToInHg } from "./physics.js";
 import * as store from "./store.js";
 import { renderChart, FIELDS, AXIS_W } from "./chart.js";
@@ -376,20 +376,26 @@ async function drawAir(lat, lon) {
           (an API key can't be safely embedded in a public page).</div>
          <div class="note">Deploy the Cloudflare Worker in <code>airnow-proxy/</code> and set
           <code>AIRNOW_PROXY</code> in <code>js/airnow.js</code> — see
-          <code>AIRNOW_SETUP.md</code>. ${link}</div>`;
+          <code>AIR_QUALITY_SETUP.md</code>. ${link}</div>`;
       return;
     }
 
     if (title) title.textContent = "Air quality · AirNow (EPA)";
     // Feed the official current AQI into the top "Current" box.
     if (q.now?.AQI != null) { officialAqi = q.now.AQI; drawHero(); }
-    // Headline: the max-AQI pollutant right now.
+    // Headline: the max-AQI pollutant right now. The proxy queries AirNow BY ZIP
+    // so this matches airnow.gov's reporting area; naming the area confirms which
+    // region the number covers (and why it can differ from a single monitor —
+    // the PurpleAir/AirGradient rows below give the local point view).
     let head = "";
     if (q.now) {
       const c = aqiCategory(q.now.AQI);
       const when = q.now.HourObserved != null
         ? ` <span class="k" style="font-weight:400">(as of ${fmtAirNowHour(q.now)})</span>` : "";
-      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>`;
+      const area = reportingAreaLabel(q.now);
+      const areaHtml = area
+        ? `<div class="k" style="font-weight:400;margin-top:2px">Reporting area: ${escapeHtml(area)}</div>` : "";
+      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>${areaHtml}`;
     }
     // Per-pollutant current readings.
     const rows = (q.observations || []).map((o) => {
@@ -402,12 +408,43 @@ async function drawAir(lat, lon) {
     const fcHtml = fc
       ? `<div class="note"><b>Forecast ${fc.DateForecast?.trim()}</b> — ${fc.ParameterName} AQI ${fc.AQI >= 0 ? fc.AQI : "—"} (${fc.Category?.Name || ""})${fc.ActionDay ? " · <b>Action Day</b>" : ""}${collapsibleProse(fc.Discussion)}</div>`
       : "";
+    // Placeholder for the secondary sensor networks; fill in once they resolve
+    // so AirNow (the regulatory number) paints immediately and isn't blocked.
     body.innerHTML = (head + rows || `<div class="loading">No current readings for this area.</div>`) +
-      fcHtml + `<div class="note">Source: EPA AirNow. ${link}</div>`;
+      `<div id="airSecondary"></div>` +
+      fcHtml + `<div class="note">Headline source: EPA AirNow. ${link}</div>`;
+    drawSecondaryAir(lat, lon);
   } catch (e) {
     if (title) title.textContent = "Air quality · AirNow";
     body.innerHTML = `<span class="err">Air quality unavailable (${e.message}).</span>`;
   }
+}
+
+// Secondary cross-check rows from the low-cost sensor networks. Best-effort:
+// each is fetched independently, and a source is shown only if it returns a
+// value. These corroborate (or flag disagreement with) the AirNow headline;
+// they are NOT the regulatory number and never feed the Current box.
+async function drawSecondaryAir(lat, lon) {
+  const [pa, ag] = await Promise.all([purpleAir(lat, lon), airGradient(lat, lon)]);
+  const el = $("airSecondary");
+  if (!el) return; // location changed / box re-rendered before we resolved
+
+  const row = (name, res) => {
+    if (!res.ok || res.aqi == null) return "";
+    const c = aqiCategory(res.aqi);
+    const n = res.sensors === 1 ? "1 sensor" : `${res.sensors} sensors`;
+    return `<div class="kv"><span class="k">${name}
+        <span class="k" style="font-weight:400">· ${n} ≤${res.radiusMi} mi · PM2.5 ${res.pm25}</span></span>
+      <span><span class="aqi-pill" style="background:${c.color}">${res.aqi} ${c.name}</span></span></div>`;
+  };
+  const rows = row("PurpleAir", pa) + row("AirGradient", ag);
+  if (!rows) { el.innerHTML = ""; return; } // no configured/available networks
+
+  el.innerHTML =
+    `<div class="note" style="border-top:1px dashed var(--line);margin-top:10px;padding-top:8px">
+       <b>Nearby sensor networks</b> — spatially averaged, EPA-corrected where applicable.
+       Independent of the official reading above; use them to cross-check.</div>`
+    + rows;
 }
 
 // AirNow gives DateObserved + HourObserved (local to the reporting area, 0–23).

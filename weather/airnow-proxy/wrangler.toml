@@ -2,5 +2,21 @@ name = "wx-air"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
-# The AirNow API key is stored as a secret, NOT here:
-#   npx wrangler secret put AIRNOW_KEY
+# Provider keys are stored as SECRETS, never here. Each is optional — a route
+# only works if its secret is set:
+#   npx wrangler secret put AIRNOW_KEY     # official EPA AirNow (headline) — required
+#   npx wrangler secret put PURPLEAIR_KEY  # PurpleAir read key (secondary) — optional
+# AirGradient needs NO secret: its world feed is public and keyless. (An optional
+# AIRGRADIENT_TOKEN is passed through if set, but is not required.)
+
+# Durable cache for lat/lon -> ZIP reverse geocodes (ZCTA boundaries are static,
+# so these effectively never expire). Run this once:
+#   npx wrangler kv namespace create ZIP_CACHE
+# Wrangler prints an `id = "<32-hex>"` — paste that value into the id field
+# below (it's a per-account namespace handle from Cloudflare, not a secret, so
+# it's fine to commit). The binding name (ZIP_CACHE) is what the Worker reads as
+# env.ZIP_CACHE. Optional: without this block the Worker just calls Census each
+# time.
+[[kv_namespaces]]
+binding = "ZIP_CACHE"
+id = "b64edc101fca4b5a8c4127772c29abfb"

@@ -1,16 +1,16 @@
-// Air quality — OFFICIAL EPA AirNow only.
+// Air quality — official EPA AirNow (headline) + two low-cost sensor networks
+// (PurpleAir, AirGradient) as secondary cross-checks.
 //
-// AirNow's API (airnowapi.org) IS reachable from the browser: it sends
-// `Access-Control-Allow-Origin: *`. The only barrier is the API key, which must
-// not be shipped in public client JS. So we call it through a tiny serverless
-// proxy that holds the key and re-serves the data. Set AIRNOW_PROXY to your
-// deployed Worker (see AIRNOW_SETUP.md). Until then, the Air box explains setup.
+// All three go through the same tiny serverless proxy (see AIR_QUALITY_SETUP.md),
+// which holds each provider's key server-side. AirNow is the regulatory number;
+// the sensor networks are spatially averaged over a small radius by the proxy
+// (NaN-safe, staleness/quality filtered) and offered only as corroboration.
 //
-// The free AirNow feed is CURRENT observations + a DAILY forecast (with a
-// written discussion). It is not an hourly ±10-day series — accuracy over
-// granularity — so there is no AQI line on the chart; only the boxes.
+// AirNow's free feed is CURRENT observations + a DAILY forecast (with a written
+// discussion) at REPORTING-AREA granularity — not an hourly ±10-day point
+// series — so there is no AQI line on the chart; only the boxes.
 
-export const AIRNOW_PROXY = "https://wx-air.samueldmcdermott.workers.dev"; // e.g. "https://wx-air.<you>.workers.dev"
+export const AIRNOW_PROXY = "https://wx-air.samueldmcdermott.workers.dev";
 export function airnowConfigured() { return !!AIRNOW_PROXY; }
 
 // US AQI category boundaries -> name + official AirNow color.
@@ -38,7 +38,7 @@ async function px(path, params) {
   const data = await r.json().catch(() => null);
   // Surface the proxy's own error message (e.g. missing key) instead of hiding it.
   if (!r.ok || (data && data.error)) {
-    throw new Error(data?.error ? `AirNow proxy: ${data.error}` : `AirNow proxy ${r.status}`);
+    throw new Error(data?.error ? `proxy: ${data.error}` : `proxy ${r.status}`);
   }
   return data;
 }
@@ -64,4 +64,40 @@ export async function airQuality(lat, lon) {
     if (o.AQI != null && (!now || o.AQI > now.AQI)) now = o;
   }
   return { configured: true, observations: observations || [], forecasts: forecasts || [], now, link };
+}
+
+// The reporting area an observation belongs to (for the "why it may differ from
+// a point reading" label). AirNow gives ReportingArea + StateCode per obs.
+export function reportingAreaLabel(obs) {
+  if (!obs) return "";
+  const area = (obs.ReportingArea || "").trim();
+  const state = (obs.StateCode || "").trim();
+  if (!area) return "";
+  return state ? `${area}, ${state}` : area;
+}
+
+// ---- Secondary sensor networks (best-effort, never throw to the caller) ----
+// Each returns { pm25, aqi, sensors, radiusMi } on success, or an { error }
+// object the caller can quietly ignore/label. The proxy does the spatial
+// averaging + AQI conversion; here we just fetch and normalize failures.
+
+async function sensorNetwork(path, lat, lon, radius) {
+  try {
+    const params = { lat, lon };
+    if (radius) params.radius = radius;
+    const d = await px(path, params);
+    return { ok: true, ...d };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+// PurpleAir: EPA-corrected PM2.5 averaged over nearby fresh/confident sensors.
+export function purpleAir(lat, lon, radius) {
+  return sensorNetwork("/purpleair", lat, lon, radius);
+}
+
+// AirGradient: PM2.5 averaged over nearby public outdoor monitors.
+export function airGradient(lat, lon, radius) {
+  return sensorNetwork("/airgradient", lat, lon, radius);
 }

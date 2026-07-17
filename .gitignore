@@ -16,7 +16,7 @@ Thumbs.db
 mortgagecalc/legacy/
 
 # Weather app: setup docs (not part of the served site)
-weather/AIRNOW_SETUP.md
+weather/AIR_QUALITY_SETUP.md
 # Wrangler local cache — contains Cloudflare account id/email, never commit
 weather/airnow-proxy/.wrangler/
 .wrangler/
