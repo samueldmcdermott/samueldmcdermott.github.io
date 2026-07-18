@@ -383,19 +383,22 @@ async function drawAir(lat, lon) {
     if (title) title.textContent = "Air quality · AirNow (EPA)";
     // Feed the official current AQI into the top "Current" box.
     if (q.now?.AQI != null) { officialAqi = q.now.AQI; drawHero(); }
-    // Headline: the max-AQI pollutant right now. The proxy queries AirNow BY ZIP
-    // so this matches airnow.gov's reporting area; naming the area confirms which
-    // region the number covers (and why it can differ from a single monitor —
-    // the PurpleAir/AirGradient rows below give the local point view).
+    // Headline: the max-AQI pollutant right now. The proxy returns the NEAREST
+    // monitoring site's NowCast AQI (the value airnow.gov shows for a location),
+    // not the reporting-area peak — so naming the site + distance shows exactly
+    // where the number comes from.
     let head = "";
     if (q.now) {
       const c = aqiCategory(q.now.AQI);
       const when = q.now.HourObserved != null
         ? ` <span class="k" style="font-weight:400">(as of ${fmtAirNowHour(q.now)})</span>` : "";
-      const area = reportingAreaLabel(q.now);
-      const areaHtml = area
-        ? `<div class="k" style="font-weight:400;margin-top:2px">Reporting area: ${escapeHtml(area)}</div>` : "";
-      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>${areaHtml}`;
+      const site = reportingAreaLabel(q.now);
+      // "Nearest monitor" when we have a per-site distance; "Reporting area" for
+      // the rural reporting-area fallback (which has no distance).
+      const kind = q.now.DistanceMi != null ? "Nearest monitor" : "Reporting area";
+      const siteHtml = site
+        ? `<div class="k" style="font-weight:400;margin-top:2px">${kind}: ${escapeHtml(site)}</div>` : "";
+      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>${siteHtml}`;
     }
     // Per-pollutant current readings.
     const rows = (q.observations || []).map((o) => {

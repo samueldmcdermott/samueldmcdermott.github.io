@@ -66,14 +66,17 @@ export async function airQuality(lat, lon) {
   return { configured: true, observations: observations || [], forecasts: forecasts || [], now, link };
 }
 
-// The reporting area an observation belongs to (for the "why it may differ from
-// a point reading" label). AirNow gives ReportingArea + StateCode per obs.
+// A short label for where the headline number comes from. The proxy now returns
+// the NEAREST monitoring site (matching airnow.gov's location page), carrying the
+// site name in ReportingArea plus an optional DistanceMi. For the rural
+// reporting-area fallback there's a StateCode but no distance.
 export function reportingAreaLabel(obs) {
   if (!obs) return "";
   const area = (obs.ReportingArea || "").trim();
   const state = (obs.StateCode || "").trim();
   if (!area) return "";
-  return state ? `${area}, ${state}` : area;
+  const base = state ? `${area}, ${state}` : area;
+  return obs.DistanceMi != null ? `${base} · ${obs.DistanceMi} mi` : base;
 }
 
 // ---- Secondary sensor networks (best-effort, never throw to the caller) ----

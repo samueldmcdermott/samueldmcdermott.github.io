@@ -64,32 +64,93 @@ export default {
 };
 
 // ---- AirNow (official EPA) ----
-// AirNow reports at REPORTING-AREA granularity (peak AQI across the area's
-// monitors). airnow.gov's front end resolves a ZIP -> reporting area via a table
-// agencies maintain; the lat/lon endpoint has no such table and instead does a
-// geometric "nearest monitor within `distance`" search, which can grab a
-// neighboring area. So we mirror the front end: reverse-geocode lat/lon -> ZIP
-// (via the keyless Census geocoder) and query AirNow BY ZIP, which uses that
-// same mapping. Only if the ZIP is unknown/unmapped do we fall back to the
-// lat/lon endpoint with a tight radius.
 const AIRNOW_DISTANCE_MI = 25; // fallback radius only (rural/unmapped ZIPs)
 
 async function airnow(pathname, url, lat, lon, env, cors, ctx) {
   const key = env.AIRNOW_KEY;
   if (!key) return json({ error: "proxy missing AIRNOW_KEY" }, 500, cors);
 
-  const isObs = pathname.endsWith("/airnow/observation");
+  if (pathname.endsWith("/airnow/observation")) {
+    return airnowObservation(lat, lon, key, cors);
+  }
+  return airnowForecast(url, lat, lon, key, env, ctx, cors);
+}
+
+// CURRENT observations — match what airnow.gov shows for a point.
+//
+// The reporting-area feed (observation/zipCode|latLong) returns the PEAK AQI
+// across ALL monitors in the area. airnow.gov's location page instead shows the
+// monitor NEAREST that point, which can be far lower (e.g. Philadelphia ZIP
+// 19143: area peak PM2.5 158 vs the nearest monitor's NowCast 96). To agree with
+// the site we query the per-monitor `aq/data` feed over a small box and keep the
+// NEAREST monitor for each pollutant, then shape it like the old feed so the
+// client is unchanged.
+async function airnowObservation(lat, lon, key, cors) {
+  const d = AIRNOW_DISTANCE_MI / 69; // deg
+  const bbox = `${(lon - d).toFixed(4)},${(lat - d).toFixed(4)},${(lon + d).toFixed(4)},${(lat + d).toFixed(4)}`;
+
+  // Query the per-monitor aq/data feed for the current hour; if AirNow hasn't
+  // published it yet (updates ~:35 past the hour) fall back to the previous
+  // hour, so a fresh page load early in the hour still shows data.
+  const nowMs = Date.now();
+  for (const backHrs of [0, 1]) {
+    const hour = new Date(nowMs - backHrs * 3600e3).toISOString().slice(0, 13); // YYYY-MM-DDTHH
+    const u = `${AIRNOW}/data/?startDate=${hour}&endDate=${hour}`
+      + `&parameters=OZONE,PM25,PM10,NO2&BBOX=${bbox}&dataType=A&format=application/json`
+      + `&verbose=1&nowcastonly=1&API_KEY=${key}`;
+    const r = await fetch(u, { cf: { cacheTtl: 600 } });
+    const rows = safeArray(await r.text());
+    if (!r.ok || !rows) continue;
+
+    // Keep the nearest monitor per pollutant.
+    const nearest = {}; // Parameter -> { row, dist }
+    for (const x of rows) {
+      if (!isNum(x.AQI) || x.AQI < 0) continue;
+      if (!isNum(x.Latitude) || !isNum(x.Longitude)) continue;
+      const dist = haversineMi(lat, lon, x.Latitude, x.Longitude);
+      const cur = nearest[x.Parameter];
+      if (!cur || dist < cur.dist) nearest[x.Parameter] = { row: x, dist };
+    }
+    if (!Object.keys(nearest).length) continue; // no usable monitors this hour
+
+    // Shape like the legacy observation feed the client already renders.
+    const obs = Object.values(nearest).map(({ row, dist }) => ({
+      DateObserved: (row.UTC || "").slice(0, 10),
+      HourObserved: null,             // aq/data is UTC; the client shows a date instead
+      UTC: row.UTC,
+      ReportingArea: row.SiteName,    // now the actual nearest site, not the area
+      StateCode: "",
+      Latitude: row.Latitude, Longitude: row.Longitude,
+      DistanceMi: Math.round(dist * 10) / 10,
+      ParameterName: PARAM_LABEL[row.Parameter] || row.Parameter,
+      AQI: row.AQI,
+      Category: { Number: row.Category, Name: aqiCategoryName(row.AQI) },
+    }));
+    obs.sort((a, b) => b.AQI - a.AQI); // headline (client picks max) first
+    return json(obs, 200, cors);
+  }
+
+  // No nearby monitors (sparse/rural) — fall back to the reporting-area feed so
+  // the box still shows a regional value rather than going blank.
+  const llurl = `${AIRNOW}/observation/latLong/current/?format=application/json`
+    + `&latitude=${lat}&longitude=${lon}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`;
+  const fr = await fetch(llurl, { cf: { cacheTtl: 600 } });
+  const body = await fr.text();
+  return new Response(body, { status: fr.ok ? 200 : 502, headers: { ...cors, "Content-Type": "application/json" } });
+}
+
+// AirNow's aq/data uses short parameter codes; map to the display names the
+// client (and the old feed) used.
+const PARAM_LABEL = { PM25: "PM2.5", PM10: "PM10", OZONE: "O3", NO2: "NO2", CO: "CO", SO2: "SO2" };
+
+// DAILY forecast — unchanged: reverse-geocode to ZIP and use the ZIP forecast
+// (matches airnow.gov's forecast), falling back to lat/lon.
+async function airnowForecast(url, lat, lon, key, env, ctx, cors) {
   const date = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
   const zip = await latLonToZip(lat, lon, env, ctx).catch(() => null);
-
-  // Try the ZIP endpoint first (matches airnow.gov). If it errors or returns no
-  // data (unmapped ZIP), fall back to the lat/lon endpoint.
   if (zip) {
-    const zurl = isObs
-      ? `${AIRNOW}/observation/zipCode/current/?format=application/json`
-        + `&zipCode=${zip}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`
-      : `${AIRNOW}/forecast/zipCode/?format=application/json`
-        + `&zipCode=${zip}&date=${date}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`;
+    const zurl = `${AIRNOW}/forecast/zipCode/?format=application/json`
+      + `&zipCode=${zip}&date=${date}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`;
     const zr = await fetch(zurl, { cf: { cacheTtl: 600 } });
     if (zr.ok) {
       const body = await zr.text();
@@ -99,13 +160,8 @@ async function airnow(pathname, url, lat, lon, env, cors, ctx) {
       }
     }
   }
-
-  // Fallback: lat/lon with a tight radius.
-  const llurl = isObs
-    ? `${AIRNOW}/observation/latLong/current/?format=application/json`
-      + `&latitude=${lat}&longitude=${lon}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`
-    : `${AIRNOW}/forecast/latLong/?format=application/json`
-      + `&latitude=${lat}&longitude=${lon}&date=${date}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`;
+  const llurl = `${AIRNOW}/forecast/latLong/?format=application/json`
+    + `&latitude=${lat}&longitude=${lon}&date=${date}&distance=${AIRNOW_DISTANCE_MI}&API_KEY=${key}`;
   const r = await fetch(llurl, { cf: { cacheTtl: 600 } });
   const body = await r.text();
   return new Response(body, {
@@ -282,6 +338,17 @@ function pmToAqi(pm) {
     }
   }
   return 500;
+}
+
+// US AQI category name from an AQI value (matches the client's AQI_CATS names).
+function aqiCategoryName(aqi) {
+  if (!isNum(aqi)) return "";
+  if (aqi <= 50) return "Good";
+  if (aqi <= 100) return "Moderate";
+  if (aqi <= 150) return "Unhealthy for Sensitive Groups";
+  if (aqi <= 200) return "Unhealthy";
+  if (aqi <= 300) return "Very Unhealthy";
+  return "Hazardous";
 }
 
 // Bounding box (deg) for a radius (mi) around a point. Longitude degrees shrink
