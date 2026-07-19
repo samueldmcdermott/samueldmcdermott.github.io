@@ -2,10 +2,11 @@
 // -> merge into one hourly series -> derive physics -> render chart + boxes.
 
 import { geocode } from "./geocode.js";
+import { encodePlusCode } from "./pluscode.js";
 import * as noaa from "./noaa.js";
 import { openMeteo } from "./openmeteo.js";
 import { moonPhase } from "./moon.js";
-import { airQuality, aqiCategory, reportingAreaLabel, purpleAir, airGradient } from "./airnow.js";
+import { airQuality, aqiCategory, reportingAreaLabel, reverseGeocode, purpleAir, airGradient } from "./airnow.js";
 import { wetBulb, vaporPressure, saturationVaporPressure, cToF, hPaToInHg } from "./physics.js";
 import * as store from "./store.js";
 import { renderChart, FIELDS, AXIS_W } from "./chart.js";
@@ -392,13 +393,7 @@ async function drawAir(lat, lon) {
       const c = aqiCategory(q.now.AQI);
       const when = q.now.HourObserved != null
         ? ` <span class="k" style="font-weight:400">(as of ${fmtAirNowHour(q.now)})</span>` : "";
-      const site = reportingAreaLabel(q.now);
-      // "Nearest monitor" when we have a per-site distance; "Reporting area" for
-      // the rural reporting-area fallback (which has no distance).
-      const kind = q.now.DistanceMi != null ? "Nearest monitor" : "Reporting area";
-      const siteHtml = site
-        ? `<div class="k" style="font-weight:400;margin-top:2px">${kind}: ${escapeHtml(site)}</div>` : "";
-      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>${siteHtml}`;
+      head = `<div class="big">AQI <span class="aqi-pill" style="background:${c.color}">${q.now.AQI} ${q.now.Category?.Name || c.name}</span>${when}</div>${monitorLabelHtml(q.now)}`;
     }
     // Per-pollutant current readings.
     const rows = (q.observations || []).map((o) => {
@@ -417,11 +412,53 @@ async function drawAir(lat, lon) {
       `<div id="airSecondary"></div>` +
       fcHtml + `<div class="note">Headline source: EPA AirNow. ${link}</div>`;
     drawSecondaryAir(lat, lon);
+    fillMonitorCity(q.now); // reverse-geocode the monitor's coords into its label
   } catch (e) {
     if (title) title.textContent = "Air quality · AirNow";
     body.innerHTML = `<span class="err">Air quality unavailable (${e.message}).</span>`;
   }
 }
+
+// Label for WHERE the headline number physically comes from. AirNow's own site
+// names aren't user-useful, so for a real nearest monitor we identify it by
+// coordinates instead: lat/lon · city (filled async) · Google Plus Code, all
+// linking to that exact spot on Google Maps. Falls back to the reporting-area
+// name for the rural fallback (which carries no monitor coordinates).
+function monitorLabelHtml(now) {
+  const hasCoords = now && isFiniteNum(now.Latitude) && isFiniteNum(now.Longitude)
+    && now.DistanceMi != null;
+  if (!hasCoords) {
+    const site = reportingAreaLabel(now);
+    return site
+      ? `<div class="k" style="font-weight:400;margin-top:2px">Reporting area: ${escapeHtml(site)}</div>` : "";
+  }
+  const lat = now.Latitude, lon = now.Longitude;
+  const coords = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  const plus = encodePlusCode(lat, lon);
+  // Google Maps opens the Plus Code directly, dropping a pin on the monitor.
+  const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plus)}`;
+  const dist = ` · ${now.DistanceMi} mi`;
+  // The city span fills in when /revgeo resolves; empty until then so nothing
+  // jumps if it fails. Keyed by rounded coords so a stale fill can't land on a
+  // newer monitor's label.
+  const cityId = `monCity_${Math.round(lat * 1e4)}_${Math.round(lon * 1e4)}`;
+  return `<div class="k" style="font-weight:400;margin-top:2px">Nearest monitor:
+    <a href="${href}" target="_blank" rel="noopener">${coords}<span id="${cityId}"></span> · ${plus}</a>${dist}</div>`;
+}
+
+// Reverse-geocode the monitor's coordinates and drop the city into its label
+// (see monitorLabelHtml). Best-effort and self-guarding: if the box was
+// re-rendered for a new location the target span is gone and we no-op.
+async function fillMonitorCity(now) {
+  if (!now || !isFiniteNum(now.Latitude) || !isFiniteNum(now.Longitude) || now.DistanceMi == null) return;
+  const cityId = `monCity_${Math.round(now.Latitude * 1e4)}_${Math.round(now.Longitude * 1e4)}`;
+  const { city, state } = await reverseGeocode(now.Latitude, now.Longitude);
+  const el = $(cityId);
+  if (!el || !city) return; // box replaced, or nothing to add
+  el.textContent = ` · ${state ? `${city}, ${state}` : city}`;
+}
+
+function isFiniteNum(x) { return typeof x === "number" && Number.isFinite(x); }
 
 // Secondary cross-check rows from the low-cost sensor networks. Best-effort:
 // each is fetched independently, and a source is shown only if it returns a

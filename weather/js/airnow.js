@@ -79,6 +79,19 @@ export function reportingAreaLabel(obs) {
   return obs.DistanceMi != null ? `${base} · ${obs.DistanceMi} mi` : base;
 }
 
+// Reverse-geocode a coordinate to { city, state } via the proxy's keyless
+// Census route. Best-effort: returns { city:"", state:"" } on any failure so a
+// caller can quietly fall back. Used to label WHERE a monitor physically sits.
+export async function reverseGeocode(lat, lon) {
+  if (!airnowConfigured()) return { city: "", state: "" };
+  try {
+    const d = await px("/revgeo", { lat, lon });
+    return { city: d?.city || "", state: d?.state || "" };
+  } catch {
+    return { city: "", state: "" };
+  }
+}
+
 // ---- Secondary sensor networks (best-effort, never throw to the caller) ----
 // Each returns { pm25, aqi, sensors, radiusMi } on success, or an { error }
 // object the caller can quietly ignore/label. The proxy does the spatial

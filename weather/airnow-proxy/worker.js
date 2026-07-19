@@ -56,6 +56,7 @@ export default {
       }
       if (p.endsWith("/purpleair")) return await purpleair(url, lat, lon, env, cors);
       if (p.endsWith("/airgradient")) return await airgradient(url, lat, lon, env, cors);
+      if (p.endsWith("/revgeo")) return await revgeo(lat, lon, env, ctx, cors);
       return json({ error: "not found" }, 404, cors);
     } catch (e) {
       return json({ error: String(e && e.message || e) }, 502, cors);
@@ -218,6 +219,61 @@ async function censusZip(lat, lon) {
   const areas = d?.result?.geographies?.["2020 Census ZIP Code Tabulation Areas"];
   const zip = areas && areas[0] && (areas[0].ZCTA5 || areas[0].GEOID || areas[0].BASENAME);
   return /^\d{5}$/.test(zip || "") ? zip : null;
+}
+
+// Reverse-geocode a coordinate to its US city + state, for labelling exactly
+// where a monitor physically sits (AirNow's own site names aren't user-useful).
+// Returns { city, state } — either may be "" if the point has none (ocean,
+// non-US, unincorporated with no CDP). Cached in KV under a "p:" prefix (place
+// boundaries are effectively static, like ZCTAs). Same durability/error rules
+// as latLonToZip: real answers (including "nothing here") are cached; a call
+// failure is not, so a transient Census outage can't poison the cache.
+const PLACE_NONE = "-"; // sentinel for "we looked, no US place here"
+
+async function revgeo(lat, lon, env, ctx, cors) {
+  const kv = env && env.ZIP_CACHE; // reuse the same namespace, distinct key prefix
+  const key = `p:${lat.toFixed(3)},${lon.toFixed(3)}`;
+
+  if (kv) {
+    const cached = await kv.get(key).catch(() => null);
+    if (cached === PLACE_NONE) return json({ city: "", state: "" }, 200, cors);
+    if (cached) {
+      const [city, state] = cached.split("|");
+      return json({ city: city || "", state: state || "" }, 200, cors);
+    }
+  }
+
+  const place = await censusPlace(lat, lon); // { city, state } | null | undefined
+  if (kv && place !== undefined) {
+    const val = place ? `${place.city}|${place.state}` : PLACE_NONE;
+    const put = kv.put(key, val).catch(() => {});
+    if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put;
+  }
+  return json(place || { city: "", state: "" }, 200, cors);
+}
+
+// Raw Census lookup for a place name. Returns { city, state }, null (no US place
+// here — a real, cacheable answer), or undefined (call failed — do NOT cache).
+// Prefers an Incorporated Place; falls back to a Census Designated Place for
+// unincorporated areas. State comes from the States layer's postal abbreviation.
+async function censusPlace(lat, lon) {
+  const q = new URLSearchParams({
+    x: String(lon), y: String(lat),
+    benchmark: "Public_AR_Current", vintage: "Current_Current",
+    layers: "Incorporated Places,Census Designated Places,States", format: "json",
+  });
+  let r;
+  try { r = await fetch(`${CENSUS}?${q}`); } catch { return undefined; }
+  if (!r.ok) return undefined;
+  const d = await r.json().catch(() => null);
+  if (!d) return undefined;
+  const g = d?.result?.geographies || {};
+  const place = (g["Incorporated Places"] || [])[0] || (g["Census Designated Places"] || [])[0];
+  const st = (g["States"] || [])[0];
+  const city = (place && (place.BASENAME || place.NAME)) || "";
+  const state = (st && (st.STUSAB || st.BASENAME)) || "";
+  if (!city && !state) return null; // nothing usable here
+  return { city, state };
 }
 
 function safeArray(text) {
