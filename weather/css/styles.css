@@ -236,7 +236,7 @@ a{color:var(--accent-line)}
 .now-rule{stroke:var(--accent-line);stroke-width:1.5;stroke-dasharray:4 3}
 .now-txt{fill:var(--accent-line);font-size:10px;font-weight:600}
 .past-shade{fill:var(--past)}
-.day-band{fill:var(--ink);opacity:.03}
+.day-band{fill:var(--ink);opacity:.06}
 /* AQI reference lines */
 .series-line{fill:none;stroke-width:1.75}
 /* NB: do not set stroke-dasharray here — a CSS value overrides the per-series

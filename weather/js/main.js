@@ -232,9 +232,11 @@ $("hero").addEventListener("click", (e) => {
 })();
 
 // Default & "now" button: open the view at the start of *today* (local
-// midnight) on the left, so today + the future are in view. A small inset keeps
-// that edge clear of the fixed y-axis overlay.
-function scrollToNow() {
+// midnight) on the left, so today + the future are in view (the dashed "now"
+// rule and past-shading still mark the current moment, just no longer pinned to
+// the left edge). A small inset keeps that edge clear of the fixed y-axis
+// overlay.
+function scrollToToday() {
   const vp = $("chartViewport");
   if (!vp.querySelector("svg") || !chartInfo?.xOf) return;
   const midnight = new Date();
@@ -242,13 +244,22 @@ function scrollToNow() {
   const inset = 56; // px in from the left (past the y-axis overlay)
   vp.scrollLeft = Math.max(0, chartInfo.xOf(midnight.toISOString()) - inset);
 }
+// On reload the view must land at today-midnight, not wherever the browser tries
+// to restore the horizontal scroll to. Since the scrollable width only exists
+// after the async data load renders the SVG, opt out of scroll restoration and
+// re-assert midnight across two frames so it wins over any late restore.
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+function openAtToday() {
+  scrollToToday();
+  requestAnimationFrame(() => requestAnimationFrame(scrollToToday));
+}
 
 let dragging = false; // shared so hover doesn't fight a drag-scroll
 (function scrollNav() {
   const vp = $("chartViewport");
   $("scrollLeft").addEventListener("click", () => vp.scrollBy({ left: -DAY(), behavior: "smooth" }));
   $("scrollRight").addEventListener("click", () => vp.scrollBy({ left: DAY(), behavior: "smooth" }));
-  $("scrollNow").addEventListener("click", scrollToNow);
+  $("scrollNow").addEventListener("click", scrollToToday);
   // drag-to-scroll (pointer) in addition to native touch swipe
   let down = false, moved = false, startX = 0, startL = 0;
   vp.addEventListener("pointerdown", (e) => { down = true; moved = false; startX = e.clientX; startL = vp.scrollLeft; });
@@ -312,6 +323,7 @@ function showTipAt(clientX, clientY) {
   let rows = "";
   for (const f of enabled) {
     const spec = FIELDS[f];
+    if (!spec) continue; // e.g. "aqi" is enabled but not a chart series (see FIELDS)
     const val = rec[spec.key];
     if (val == null || !Number.isFinite(val)) continue;
     rows += `<div class="tip-row"><span class="tip-k"><span class="tip-dot" style="background:${spec.color}"></span>${spec.label}</span><span>${fmtVal(spec.key, val)}</span></div>`;
@@ -583,7 +595,7 @@ async function loadLocation(query) {
 
     draw();
     drawHero();
-    requestAnimationFrame(scrollToNow);
+    openAtToday();
     const measuredN = currentRecords.filter((r) => r.measured).length;
     status.textContent = `${currentRecords.length} hourly points · ${measuredN} measured (cached) · forecast to +10 d.`;
   } catch (e) {
