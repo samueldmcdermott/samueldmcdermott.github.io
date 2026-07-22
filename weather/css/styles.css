@@ -193,10 +193,6 @@ a{color:var(--accent-line)}
 .chart-viewport{
   overflow-x:auto;overflow-y:hidden;
   cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
-  /* Stop Chrome/DuckDuckGo scroll-anchoring from re-anchoring the view (onto
-     "now") when the async SVG mounts and the scroll range first appears — we set
-     the opening scroll position ourselves (see openAtToday in main.js). */
-  overflow-anchor:none;
   border-radius:10px;
 }
 .chart-viewport:active{cursor:grabbing}
