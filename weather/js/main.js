@@ -236,22 +236,61 @@ $("hero").addEventListener("click", (e) => {
 // rule and past-shading still mark the current moment, just no longer pinned to
 // the left edge). A small inset keeps that edge clear of the fixed y-axis
 // overlay.
-function scrollToToday() {
+// The scrollLeft that puts today-midnight just past the y-axis overlay, or null
+// if the chart isn't laid out yet.
+function todayScrollLeft() {
   const vp = $("chartViewport");
-  if (!vp.querySelector("svg") || !chartInfo?.xOf) return;
+  if (!vp.querySelector("svg") || !chartInfo?.xOf) return null;
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0); // today, local midnight
   const inset = 56; // px in from the left (past the y-axis overlay)
-  vp.scrollLeft = Math.max(0, chartInfo.xOf(midnight.toISOString()) - inset);
+  return Math.max(0, chartInfo.xOf(midnight.toISOString()) - inset);
 }
-// On reload the view must land at today-midnight, not wherever the browser tries
-// to restore the horizontal scroll to. Since the scrollable width only exists
-// after the async data load renders the SVG, opt out of scroll restoration and
-// re-assert midnight across two frames so it wins over any late restore.
+function scrollToToday() {
+  const x = todayScrollLeft();
+  if (x != null) $("chartViewport").scrollLeft = x;
+}
+// On reload the view must land at today-midnight, not wherever the browser puts
+// it. Two things fight us and neither is a fixed number of frames away:
+//   1) scroll restoration (browser re-applies a remembered scrollLeft),
+//   2) scroll anchoring (when the async SVG mounts and the scrollable width
+//      first appears, Chrome/DuckDuckGo re-anchor the view — which is why it
+//      lands on "now" instead of midnight even in an incognito window with no
+//      restore history).
+// A single set (or even two rAFs) can be clobbered by a *later* re-anchor. So we
+// opt out of scroll restoration, and then re-assert midnight whenever the
+// content resizes or the browser moves us, until the position holds through a
+// short settle window.
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+let openRO = null;
 function openAtToday() {
-  scrollToToday();
-  requestAnimationFrame(() => requestAnimationFrame(scrollToToday));
+  const vp = $("chartViewport");
+  openRO?.disconnect();
+  const svg = vp.querySelector("svg");
+  if (!svg) { requestAnimationFrame(openAtToday); return; }
+
+  let done = false;
+  const stop = () => {
+    if (done) return;
+    done = true;
+    openRO?.disconnect(); openRO = null;
+    for (const ev of userScroll) vp.removeEventListener(ev, stop);
+  };
+  const reassert = () => { if (!done) scrollToToday(); }; // undo browser drift
+
+  // The instant the user takes over (drag / touch / wheel / keys) we stop
+  // fighting them — otherwise we'd yank them back to midnight mid-scroll.
+  const userScroll = ["pointerdown", "touchstart", "wheel", "keydown"];
+  for (const ev of userScroll) vp.addEventListener(ev, stop, { passive: true, once: true });
+
+  reassert();
+  // ResizeObserver fires when the SVG first gets its real width — the moment the
+  // scroll range (and any browser re-anchor) appears, which fixed rAF timing can
+  // miss. Re-assert on every such change, then release after a short settle so a
+  // late re-anchor can't win.
+  openRO = new ResizeObserver(reassert);
+  openRO.observe(svg);
+  setTimeout(stop, 700);
 }
 
 let dragging = false; // shared so hover doesn't fight a drag-scroll
